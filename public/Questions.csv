@@ -1,0 +1,19 @@
+ID,type,difficulty,question,option 1,option 2,option 3,option 4,answer
+1,multiple choice,Easy,What is the formula for stress?,Force x Area,Force / Area,Mass x Acceleration,Velocity / Time,Force / Area
+2,multiple choice,Medium,Which of the following is a ductile material?,Cast Iron,Glass,Mild Steel,Ceramics,Mild Steel
+3,multiple choice,Hard,The ability of a material to absorb energy when deformed elastically and return it when unloaded is called:,Toughness,Hardness,Resilience,Brittleness,Resilience
+4,multiple choice,Easy,What is the SI unit of pressure?,Joule,Pascal,Newton,Watt,Pascal
+5,multiple choice,Medium,Which type of heat transfer occurs through fluid movement?,Conduction,Convection,Radiation,Evaporation,Convection
+6,multiple choice,Hard,"In a four-stroke engine, the power stroke occurs after which stroke?",Intake,Compression,Exhaust,Ignition,Expansion
+7,multiple choice,Easy,What does HVAC stand for?,"Heating, Ventilation, and Air Conditioning",High Voltage Alternating Current,"Heat, Velocity, and Air Circulation",Heavy Vehicle Air Compressor,"Heating, Ventilation, and Air Conditioning"
+8,multiple choice,Medium,Which of these is a non-renewable energy source?,Solar,Wind,Geothermal,Coal,Coal
+9,multiple choice,Hard,The critical speed of a shaft depends on:,Its length only,Its diameter only,Its material and length,Its mass and stiffness,Its mass and stiffness
+10,multiple choice,Medium,What is the primary function of a gearbox?,To increase speed,To decrease speed,To change torque and speed,To regulate temperature,To change torque and speed
+11,open ended,Medium,Explain the working principle of a refrigeration cycle.,,,,,[Answer]
+12,open ended,Hard,Describe the different types of mechanical linkages and their applications.,,,,,[Answer]
+13,open ended,Easy,What are the three phases of matter?,,,,,"Solid, Liquid, Gas"
+14,open ended,Medium,Discuss the advantages and disadvantages of using composite materials in engineering.,,,,,[Answer]
+15,open ended,Hard,How does Bernoulli's principle apply to fluid dynamics?,,,,,[Answer]
+16,calculation,Medium,A force of 100 N is applied to an area of 0.5 m². Calculate the pressure.,,,,,200 Pa
+17,calculation,Hard,A heat engine operates between temperatures of 600 K and 300 K. What is the maximum possible efficiency of this engine?,,,,,50%
+18,calculation,Medium,Calculate the power consumed by an electrical heater with a resistance of 20 ohms and a current of 5 amps flowing through it.,,,,,500 Watts
