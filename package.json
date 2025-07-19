@@ -8,7 +8,11 @@
     "deploy:worker": "wrangler deploy python/grader.py --name ai-grader-worker",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "pages:build": "next build && npx @cloudflare/next-on-pages",
+    "pages:dev": "next dev",
+    "pages:preview": "npm run pages:build && wrangler pages dev .next",
+    "pages:deploy": "npm run pages:build && wrangler pages deploy .next"
   },
   "dependencies": {
     "@google/generative-ai": "latest",
@@ -70,8 +74,13 @@
     "postcss": "^8.5",
     "tailwindcss": "^3.4.17",
     "typescript": "^5",
-    "vercel": "^36.0.0",
-    "wrangler": "^3.78.5"
+    "wrangler": "^4.25.0"
+  },
+  "overrides": {
+    "cookie": "^0.7.0",
+    "esbuild": "^0.25.0",
+    "path-to-regexp": "^6.3.0",
+    "undici": "^5.29.0"
   },
   "pnpm": {
     "approve-builds": true

@@ -1,12 +1,11 @@
 name = "cloudhire"
 compatibility_date = "2025-07-19"
+compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = ".next"
 
-[vars]
-AI_GRADER_WORKER_URL = "https://ai-grader-worker.youraccount.workers.dev/"
+[[d1_databases]]
+binding = "DB"
+database_name = "cloudhire-db"
+database_id = "30768915-bb91-4955-a0a8-99e96742c717"
 
-[env.preview.vars]
-AI_GRADER_WORKER_URL = "https://staging-ai-grader.youraccount.workers.dev/"
-
-[env.production.vars]
-AI_GRADER_WORKER_URL = "https://ai-grader-worker.youraccount.workers.dev/"
+migrations_dir = "migrations"  # Points to your /migrations folder for automatic application
