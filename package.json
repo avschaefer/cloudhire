@@ -9,13 +9,14 @@
     "dev": "next dev",
     "lint": "next lint",
     "start": "next start",
-    "preview": "npm run build:opennext && wrangler dev",
-    "deploy": "npm run build:opennext && wrangler deploy",
-    "ci:build": "npm ci && npm run build:opennext"
+    "preview": "npm run build && wrangler dev",
+    "deploy": "npm run build && wrangler deploy",
+    "ci:build": "npm ci && npm run build"
   },
   "dependencies": {
     "@google/generative-ai": "latest",
     "@hookform/resolvers": "^3.9.1",
+    "@opennextjs/cloudflare": "^1.5.1",
     "@radix-ui/react-accordion": "latest",
     "@radix-ui/react-alert-dialog": "latest",
     "@radix-ui/react-aspect-ratio": "latest",
@@ -65,7 +66,6 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "^1.5.1",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
