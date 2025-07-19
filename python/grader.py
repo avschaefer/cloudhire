@@ -2,44 +2,53 @@ import json
 import os
 from typing import Dict, List, Any
 
-def get_api_key() -> str:
-    """Get XAI API key from environment variables"""
-    return os.getenv('XAI_API_KEY', '')
+def handler(request):
+    """
+    Cloudflare Worker handler for AI-powered exam grading
+    """
+    try:
+        # Parse request
+        if request.method != 'POST':
+            return Response(
+                json.dumps({'error': 'Method not allowed'}),
+                status=405,
+                headers={'Content-Type': 'application/json'}
+            )
+        
+        data = request.json()
+        questions = data.get('questions', [])
+        answers = data.get('answers', [])
+        api_key = data.get('apiKey') or os.getenv('XAI_API_KEY')
+        
+        if not api_key:
+            return fallback_grading(questions, answers)
+        
+        # Use xAI Grok for grading
+        grading_result = grade_with_grok(questions, answers, api_key)
+        
+        return Response(
+            json.dumps(grading_result),
+            headers={
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type',
+            }
+        )
+        
+    except Exception as e:
+        print(f"Error in grading handler: {e}")
+        return fallback_grading(questions, answers)
 
-def grade_question(question: Dict[str, Any], answer: str, api_key: str) -> Dict[str, Any]:
-    """Grade a single question using XAI Grok API"""
+def grade_with_grok(questions: List[Dict], answers: List[Dict], api_key: str) -> Dict[str, Any]:
+    """
+    Grade exam using xAI Grok
+    """
     try:
         import requests
         
-        if not api_key:
-            return {
-                'score': 0,
-                'maxScore': question.get('Points', 10),
-                'feedback': 'API key not configured'
-            }
-        
-        # Prepare the prompt for Grok
-        prompt = f"""
-        Grade this technical exam question:
-        
-        Question: {question['Question']}
-        Category: {question.get('Category', 'General')}
-        Difficulty: {question.get('Difficulty', 'Medium')}
-        Max Points: {question.get('Points', 10)}
-        
-        Student Answer: {answer}
-        
-        Please provide:
-        1. A score out of {question.get('Points', 10)} points
-        2. Constructive feedback explaining the score
-        3. What the student did well and areas for improvement
-        
-        Respond in JSON format:
-        {{
-            "score": <number>,
-            "feedback": "<detailed feedback>"
-        }}
-        """
+        # Prepare prompt for Grok
+        prompt = create_grading_prompt(questions, answers)
         
         response = requests.post(
             'https://api.x.ai/v1/chat/completions',
@@ -50,158 +59,118 @@ def grade_question(question: Dict[str, Any], answer: str, api_key: str) -> Dict[
             json={
                 'model': 'grok-3',
                 'messages': [
-                    {'role': 'system', 'content': 'You are an expert technical interviewer and grader. Provide fair, constructive feedback.'},
-                    {'role': 'user', 'content': prompt}
+                    {
+                        'role': 'system',
+                        'content': 'You are an expert technical interviewer and grader. Provide detailed, constructive feedback on technical exam responses.'
+                    },
+                    {
+                        'role': 'user',
+                        'content': prompt
+                    }
                 ],
                 'temperature': 0.3
-            },
-            timeout=30
+            }
         )
         
         if response.status_code == 200:
             result = response.json()
-            content = result['choices'][0]['message']['content']
+            feedback = result['choices'][0]['message']['content']
             
-            # Try to parse JSON response
-            try:
-                grading_result = json.loads(content)
-                return {
-                    'score': min(grading_result.get('score', 0), question.get('Points', 10)),
-                    'maxScore': question.get('Points', 10),
-                    'feedback': grading_result.get('feedback', 'No feedback provided')
-                }
-            except json.JSONDecodeError:
-                # Fallback if JSON parsing fails
-                return {
-                    'score': question.get('Points', 10) * 0.5,  # Give 50% as fallback
-                    'maxScore': question.get('Points', 10),
-                    'feedback': f'AI grading response: {content[:200]}...'
-                }
+            # Parse Grok response and structure it
+            return parse_grok_response(feedback, questions, answers)
         else:
-            return {
-                'score': 0,
-                'maxScore': question.get('Points', 10),
-                'feedback': f'API error: {response.status_code}'
-            }
+            print(f"Grok API error: {response.status_code}")
+            return fallback_grading(questions, answers)
             
     except Exception as e:
-        return {
-            'score': 0,
-            'maxScore': question.get('Points', 10),
-            'feedback': f'Grading error: {str(e)}'
-        }
+        print(f"Error calling Grok API: {e}")
+        return fallback_grading(questions, answers)
 
-def lambda_handler(event, context):
-    """Main handler for the Python Worker"""
+def create_grading_prompt(questions: List[Dict], answers: List[Dict]) -> str:
+    """
+    Create a structured prompt for Grok grading
+    """
+    prompt = "Please grade this technical exam and provide detailed feedback:\n\n"
+    
+    for i, (question, answer) in enumerate(zip(questions, answers), 1):
+        prompt += f"Question {i}: {question.get('question', '')}\n"
+        prompt += f"Type: {question.get('type', '')}\n"
+        prompt += f"Category: {question.get('category', '')}\n"
+        prompt += f"Answer: {answer.get('answer', 'No answer provided')}\n\n"
+    
+    prompt += """
+Please provide:
+1. A score out of 100 for the overall exam
+2. Detailed feedback for each question
+3. Overall strengths and areas for improvement
+4. Specific technical insights
+
+Format your response as JSON with this structure:
+{
+  "score": 85,
+  "feedback": "Overall assessment...",
+  "details": {
+    "question_1": {"score": 8, "feedback": "..."},
+    "question_2": {"score": 7, "feedback": "..."}
+  },
+  "strengths": ["Strong understanding of...", "Good problem-solving..."],
+  "improvements": ["Could improve on...", "Consider studying..."]
+}
+"""
+    
+    return prompt
+
+def parse_grok_response(feedback: str, questions: List[Dict], answers: List[Dict]) -> Dict[str, Any]:
+    """
+    Parse Grok's response into structured format
+    """
     try:
-        # Parse the request
-        if isinstance(event, str):
-            body = json.loads(event)
+        # Try to extract JSON from response
+        import re
+        json_match = re.search(r'\{.*\}', feedback, re.DOTALL)
+        
+        if json_match:
+            parsed = json.loads(json_match.group())
+            return parsed
         else:
-            body = event.get('body', {})
-            if isinstance(body, str):
-                body = json.loads(body)
-        
-        questions = body.get('questions', [])
-        answers = body.get('answers', [])
-        api_key = body.get('apiKey', get_api_key())
-        
-        if not questions or not answers:
+            # Fallback if JSON parsing fails
             return {
-                'statusCode': 400,
-                'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-                    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-                },
-                'body': json.dumps({'error': 'Missing questions or answers'})
+                "score": 75,
+                "feedback": feedback,
+                "details": {},
+                "strengths": ["Completed the assessment"],
+                "improvements": ["Provide more detailed responses"]
             }
-        
-        # Create a mapping of question IDs to questions
-        question_map = {q['ID']: q for q in questions}
-        
-        # Grade each answer
-        results = []
-        for answer in answers:
-            question_id = answer['questionId']
-            question = question_map.get(question_id)
             
-            if not question:
-                results.append({
-                    'questionId': question_id,
-                    'score': 0,
-                    'maxScore': 10,
-                    'feedback': 'Question not found',
-                    'category': 'Unknown'
-                })
-                continue
-            
-            grading_result = grade_question(question, answer['answer'], api_key)
-            results.append({
-                'questionId': question_id,
-                'score': grading_result['score'],
-                'maxScore': grading_result['maxScore'],
-                'feedback': grading_result['feedback'],
-                'category': question.get('Category', 'General')
-            })
-        
-        # Calculate overall results
-        total_score = sum(r['score'] for r in results)
-        max_score = sum(r['maxScore'] for r in results)
-        percentage = (total_score / max_score * 100) if max_score > 0 else 0
-        
-        # Generate overall feedback
-        if percentage >= 90:
-            overall_feedback = "Excellent performance! You demonstrated strong technical knowledge and problem-solving skills."
-        elif percentage >= 80:
-            overall_feedback = "Good performance overall. You showed solid understanding with room for minor improvements."
-        elif percentage >= 70:
-            overall_feedback = "Satisfactory performance. You have a good foundation but could benefit from additional practice in some areas."
-        elif percentage >= 60:
-            overall_feedback = "Performance needs improvement. Consider reviewing the fundamental concepts and practicing more."
-        else:
-            overall_feedback = "Significant improvement needed. We recommend additional study and practice before retaking the assessment."
-        
-        exam_result = {
-            'totalScore': total_score,
-            'maxScore': max_score,
-            'percentage': percentage,
-            'results': results,
-            'overallFeedback': overall_feedback
-        }
-        
-        return {
-            'statusCode': 200,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'POST, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-            },
-            'body': json.dumps(exam_result)
-        }
-        
     except Exception as e:
-        return {
-            'statusCode': 500,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'POST, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-            },
-            'body': json.dumps({'error': f'Internal server error: {str(e)}'})
-        }
+        print(f"Error parsing Grok response: {e}")
+        return fallback_grading(questions, answers)
 
-# Handle OPTIONS requests for CORS
-def options_handler(event, context):
+def fallback_grading(questions: List[Dict], answers: List[Dict]) -> Dict[str, Any]:
+    """
+    Fallback grading when AI is unavailable
+    """
+    total_questions = len(questions)
+    answered_questions = sum(1 for answer in answers if answer.get('answer', '').strip())
+    
+    score = min(int((answered_questions / total_questions) * 100), 100) if total_questions > 0 else 0
+    
     return {
-        'statusCode': 200,
-        'headers': {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+        "score": score,
+        "feedback": f"Basic evaluation: {answered_questions}/{total_questions} questions answered. AI grading temporarily unavailable.",
+        "details": {
+            f"question_{i+1}": {
+                "answered": bool(answer.get('answer', '').strip()),
+                "response": answer.get('answer', 'No answer provided')
+            }
+            for i, answer in enumerate(answers)
         },
-        'body': ''
+        "strengths": ["Completed the assessment"] if answered_questions > 0 else [],
+        "improvements": ["Complete all questions", "Provide more detailed answers"] if answered_questions < total_questions else []
     }
+
+class Response:
+    def __init__(self, body, status=200, headers=None):
+        self.body = body
+        self.status = status
+        self.headers = headers or {}

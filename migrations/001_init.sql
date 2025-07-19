@@ -1,35 +1,35 @@
--- Create exam_sessions table
-CREATE TABLE IF NOT EXISTS exam_sessions (
+-- Initial database schema for exam submissions
+CREATE TABLE IF NOT EXISTS exam_submissions (
     id TEXT PRIMARY KEY,
     candidate_name TEXT NOT NULL,
     candidate_email TEXT NOT NULL,
-    start_time TEXT NOT NULL,
-    end_time TEXT,
-    status TEXT NOT NULL DEFAULT 'in_progress',
-    total_score REAL,
-    max_score REAL,
-    percentage REAL,
-    report_data TEXT,
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
+    position TEXT NOT NULL,
+    exam_data TEXT NOT NULL, -- JSON string
+    grading_result TEXT NOT NULL, -- JSON string
+    submitted_at TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create question_responses table
-CREATE TABLE IF NOT EXISTS question_responses (
-    id TEXT PRIMARY KEY,
-    session_id TEXT NOT NULL,
-    question_id INTEGER NOT NULL,
-    answer TEXT NOT NULL,
-    time_spent INTEGER NOT NULL,
-    score REAL,
-    max_score REAL,
-    feedback TEXT,
-    created_at TEXT NOT NULL,
-    FOREIGN KEY (session_id) REFERENCES exam_sessions (id)
+-- Index for faster lookups
+CREATE INDEX IF NOT EXISTS idx_exam_submissions_email ON exam_submissions(candidate_email);
+CREATE INDEX IF NOT EXISTS idx_exam_submissions_submitted_at ON exam_submissions(submitted_at);
+
+-- Table for storing questions (for future question management)
+CREATE TABLE IF NOT EXISTS questions (
+    id INTEGER PRIMARY KEY,
+    question TEXT NOT NULL,
+    type TEXT NOT NULL,
+    category TEXT,
+    difficulty TEXT,
+    points INTEGER DEFAULT 10,
+    options TEXT, -- JSON string for multiple choice options
+    correct_answer TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create indexes for better performance
-CREATE INDEX IF NOT EXISTS idx_exam_sessions_status ON exam_sessions(status);
-CREATE INDEX IF NOT EXISTS idx_exam_sessions_created_at ON exam_sessions(created_at);
-CREATE INDEX IF NOT EXISTS idx_question_responses_session_id ON question_responses(session_id);
-CREATE INDEX IF NOT EXISTS idx_question_responses_question_id ON question_responses(question_id);
+-- Insert sample questions
+INSERT OR IGNORE INTO questions (id, question, type, category, difficulty, points) VALUES
+(1, 'What is the difference between let and var in JavaScript?', 'Open Ended', 'JavaScript', 'Medium', 10),
+(2, 'Explain the concept of closures in JavaScript.', 'Open Ended', 'JavaScript', 'Hard', 15),
+(3, 'What is the time complexity of binary search?', 'Multiple Choice', 'Algorithms', 'Medium', 10);
