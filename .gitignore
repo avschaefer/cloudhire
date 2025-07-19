@@ -25,3 +25,4 @@ next-env.d.ts
 
 # OpenNext build artifacts
 .open-next/
+!.open-next/worker.js
