@@ -1,39 +1,38 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { WelcomePage } from "./components/welcome-page"
-import { BioPage } from "./components/bio-page"
-import { ExamPage } from "./components/exam-page"
-import { SubmissionPage } from "./components/submission-page"
-import { parseCSV } from "./utils/csv-parser"
+import { useState } from "react"
+import WelcomePage from "./components/welcome-page"
+import BioPage from "./components/bio-page"
+import ExamPage from "./components/exam-page"
+import SubmissionPage from "./components/submission-page"
 
+// Define a minimal Question interface, even if unused for now
 export interface Question {
-  id: number
+  ID: string
   question: string
-  type: "multiple-choice" | "short-answer" | "essay"
+  type: "multipleChoice" | "concepts" | "calculations"
   options?: string[]
-  correctAnswer?: string
-  points: number
-  category: string
+  difficulty?: string
 }
 
-export interface UserInfo {
-  name: string
+export interface UserBio {
+  firstName: string
+  lastName: string
   email: string
   position: string
   experience: string
   motivation: string
 }
 
-export interface Answer {
-  questionId: number
-  answer: string
-  timeSpent: number
+export interface ExamData {
+  multipleChoice: Record<string, string>
+  concepts: Record<string, string>
+  calculations: Record<string, string>
 }
 
 export interface ExamResult {
-  userInfo: UserInfo
-  answers: Answer[]
+  userBio: UserBio
+  answers: any[] // Simplified for now
   totalScore: number
   maxScore: number
   completedAt: string
@@ -44,83 +43,33 @@ type ExamStep = "welcome" | "bio" | "exam" | "submission"
 
 export default function ExamApp() {
   const [currentStep, setCurrentStep] = useState<ExamStep>("welcome")
-  const [userInfo, setUserInfo] = useState<UserInfo | null>(null)
+  const [userBio, setUserBio] = useState<UserBio | null>(null)
+  // Initialize with an empty array of questions
   const [questions, setQuestions] = useState<Question[]>([])
-  const [answers, setAnswers] = useState<Answer[]>([])
   const [examResult, setExamResult] = useState<ExamResult | null>(null)
   const [loading, setLoading] = useState(false)
 
-  // Load questions on component mount
-  useEffect(() => {
-    const loadQuestions = async () => {
-      try {
-        const response = await fetch("/Questions.csv")
-        const csvText = await response.text()
-        const parsedQuestions = parseCSV(csvText)
-        setQuestions(parsedQuestions)
-      } catch (error) {
-        console.error("Error loading questions:", error)
-        // Fallback questions if CSV fails to load
-        const fallbackQuestions: Question[] = [
-          {
-            id: 1,
-            question: "What is your experience with cloud technologies?",
-            type: "essay",
-            points: 10,
-            category: "Technical",
-          },
-          {
-            id: 2,
-            question: "Which programming language do you prefer for backend development?",
-            type: "multiple-choice",
-            options: ["JavaScript/Node.js", "Python", "Java", "Go", "Other"],
-            points: 5,
-            category: "Technical",
-          },
-          {
-            id: 3,
-            question: "Describe a challenging project you've worked on recently.",
-            type: "essay",
-            points: 15,
-            category: "Experience",
-          },
-        ]
-        setQuestions(fallbackQuestions)
-      }
-    }
-
-    loadQuestions()
-  }, [])
-
   const handleWelcomeComplete = () => {
+    // No questions to load, just move to the next step
     setCurrentStep("bio")
   }
 
-  const handleBioComplete = (info: UserInfo) => {
-    setUserInfo(info)
+  const handleBioComplete = (bio: UserBio) => {
+    setUserBio(bio)
     setCurrentStep("exam")
   }
 
-  const handleExamComplete = async (examAnswers: Answer[], timeSpent: number) => {
-    if (!userInfo) return
+  const handleExamComplete = async (examData: ExamData, timeSpent: number) => {
+    if (!userBio) return
 
     setLoading(true)
-    setAnswers(examAnswers)
 
     try {
-      // Calculate basic score (this will be enhanced with AI grading)
-      const totalScore = examAnswers.reduce((sum, answer) => {
-        const question = questions.find((q) => q.id === answer.questionId)
-        return sum + (question?.points || 0)
-      }, 0)
-
-      const maxScore = questions.reduce((sum, q) => sum + q.points, 0)
-
       const result: ExamResult = {
-        userInfo,
-        answers: examAnswers,
-        totalScore,
-        maxScore,
+        userBio,
+        answers: [], // No answers since there are no questions
+        totalScore: 0,
+        maxScore: 0,
         completedAt: new Date().toISOString(),
         timeSpent,
       }
@@ -136,8 +85,8 @@ export default function ExamApp() {
 
   const handleBackToWelcome = () => {
     setCurrentStep("welcome")
-    setUserInfo(null)
-    setAnswers([])
+    setUserBio(null)
+    setQuestions([])
     setExamResult(null)
   }
 
@@ -154,12 +103,22 @@ export default function ExamApp() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {currentStep === "welcome" && <WelcomePage onComplete={handleWelcomeComplete} />}
+      {currentStep === "welcome" && <WelcomePage onNext={handleWelcomeComplete} />}
 
-      {currentStep === "bio" && <BioPage onComplete={handleBioComplete} />}
+      {currentStep === "bio" && (
+        <BioPage
+          onNext={handleBioComplete}
+          userBio={userBio || { firstName: "", lastName: "", email: "", position: "", experience: "", motivation: "" }}
+        />
+      )}
 
-      {currentStep === "exam" && userInfo && (
-        <ExamPage questions={questions} userInfo={userInfo} onComplete={handleExamComplete} />
+      {currentStep === "exam" && userBio && (
+        <ExamPage
+          initialExamData={{ multipleChoice: {}, concepts: {}, calculations: {} }}
+          userBio={userBio}
+          onComplete={handleExamComplete}
+          questions={questions} // Pass the empty questions array
+        />
       )}
 
       {currentStep === "submission" && examResult && (
