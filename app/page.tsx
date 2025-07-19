@@ -1,103 +1,170 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import WelcomePage from "./components/welcome-page"
-import BioPage from "./components/bio-page"
-import ExamPage from "./components/exam-page"
-import SubmissionPage from "./components/submission-page"
-import ProgressTracker from "./components/progress-tracker"
-import { fetchAndParseQuestionsCsv, type Question } from "./utils/csv-parser"
-import type { UserBio, ExamData } from "./utils/types"
+import { WelcomePage } from "./components/welcome-page"
+import { BioPage } from "./components/bio-page"
+import { ExamPage } from "./components/exam-page"
+import { SubmissionPage } from "./components/submission-page"
+import { parseCSV } from "./utils/csv-parser"
 
-const EMPTY_BIO: UserBio = {
-  firstName: "",
-  lastName: "",
-  email: "",
-  phone: "",
-  position: "",
-  experience: "",
-  education: "",
+export interface Question {
+  id: number
+  question: string
+  type: "multiple-choice" | "short-answer" | "essay"
+  options?: string[]
+  correctAnswer?: string
+  points: number
+  category: string
 }
 
-export type Stage = "welcome" | "bio" | "exam" | "submission"
+export interface UserInfo {
+  name: string
+  email: string
+  position: string
+  experience: string
+  motivation: string
+}
 
-export default function App() {
-  const [stage, setStage] = useState<Stage>("welcome")
-  const [userBio, setUserBio] = useState<UserBio | null>(null)
-  const [examData, setExamData] = useState<ExamData | null>(null)
+export interface Answer {
+  questionId: number
+  answer: string
+  timeSpent: number
+}
+
+export interface ExamResult {
+  userInfo: UserInfo
+  answers: Answer[]
+  totalScore: number
+  maxScore: number
+  completedAt: string
+  timeSpent: number
+}
+
+type ExamStep = "welcome" | "bio" | "exam" | "submission"
+
+export default function ExamApp() {
+  const [currentStep, setCurrentStep] = useState<ExamStep>("welcome")
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null)
   const [questions, setQuestions] = useState<Question[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [answers, setAnswers] = useState<Answer[]>([])
+  const [examResult, setExamResult] = useState<ExamResult | null>(null)
+  const [loading, setLoading] = useState(false)
 
+  // Load questions on component mount
   useEffect(() => {
     const loadQuestions = async () => {
       try {
-        const fetchedQuestions = await fetchAndParseQuestionsCsv()
-        setQuestions(fetchedQuestions)
-      } catch (err) {
-        setError("Failed to load exam questions. Please try refreshing the page.")
-        console.error(err)
-      } finally {
-        setIsLoading(false)
+        const response = await fetch("/Questions.csv")
+        const csvText = await response.text()
+        const parsedQuestions = parseCSV(csvText)
+        setQuestions(parsedQuestions)
+      } catch (error) {
+        console.error("Error loading questions:", error)
+        // Fallback questions if CSV fails to load
+        const fallbackQuestions: Question[] = [
+          {
+            id: 1,
+            question: "What is your experience with cloud technologies?",
+            type: "essay",
+            points: 10,
+            category: "Technical",
+          },
+          {
+            id: 2,
+            question: "Which programming language do you prefer for backend development?",
+            type: "multiple-choice",
+            options: ["JavaScript/Node.js", "Python", "Java", "Go", "Other"],
+            points: 5,
+            category: "Technical",
+          },
+          {
+            id: 3,
+            question: "Describe a challenging project you've worked on recently.",
+            type: "essay",
+            points: 15,
+            category: "Experience",
+          },
+        ]
+        setQuestions(fallbackQuestions)
       }
     }
+
     loadQuestions()
   }, [])
 
-  const handleBioSubmit = (bio: UserBio) => {
-    setUserBio(bio)
-    setStage("exam")
+  const handleWelcomeComplete = () => {
+    setCurrentStep("bio")
   }
 
-  const handleExamComplete = (data: ExamData) => {
-    setExamData(data)
-    setStage("submission")
+  const handleBioComplete = (info: UserInfo) => {
+    setUserInfo(info)
+    setCurrentStep("exam")
   }
 
-  const handleStartNew = () => {
-    setUserBio(null)
-    setExamData(null)
-    setStage("welcome")
+  const handleExamComplete = async (examAnswers: Answer[], timeSpent: number) => {
+    if (!userInfo) return
+
+    setLoading(true)
+    setAnswers(examAnswers)
+
+    try {
+      // Calculate basic score (this will be enhanced with AI grading)
+      const totalScore = examAnswers.reduce((sum, answer) => {
+        const question = questions.find((q) => q.id === answer.questionId)
+        return sum + (question?.points || 0)
+      }, 0)
+
+      const maxScore = questions.reduce((sum, q) => sum + q.points, 0)
+
+      const result: ExamResult = {
+        userInfo,
+        answers: examAnswers,
+        totalScore,
+        maxScore,
+        completedAt: new Date().toISOString(),
+        timeSpent,
+      }
+
+      setExamResult(result)
+      setCurrentStep("submission")
+    } catch (error) {
+      console.error("Error processing exam:", error)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  if (isLoading) {
+  const handleBackToWelcome = () => {
+    setCurrentStep("welcome")
+    setUserInfo(null)
+    setAnswers([])
+    setExamResult(null)
+  }
+
+  if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-lg text-gray-600">Loading Assessment...</p>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-lg">Processing your exam...</p>
         </div>
       </div>
     )
   }
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen text-center text-red-500">
-        <p>{error}</p>
-      </div>
-    )
-  }
-
-  const renderContent = () => {
-    switch (stage) {
-      case "welcome":
-        return <WelcomePage onNext={() => setStage("bio")} />
-      case "bio":
-        return <BioPage userBio={userBio ?? EMPTY_BIO} onUpdateBio={handleBioSubmit} />
-      case "exam":
-        return <ExamPage questions={questions} onComplete={handleExamComplete} />
-      case "submission":
-        return <SubmissionPage userBio={userBio} examData={examData} onStartNew={handleStartNew} />
-      default:
-        return <WelcomePage onNext={() => setStage("bio")} />
-    }
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
-      <ProgressTracker currentStage={stage} />
-      <main>{renderContent()}</main>
+      {currentStep === "welcome" && <WelcomePage onComplete={handleWelcomeComplete} />}
+
+      {currentStep === "bio" && <BioPage onComplete={handleBioComplete} />}
+
+      {currentStep === "exam" && userInfo && (
+        <ExamPage questions={questions} userInfo={userInfo} onComplete={handleExamComplete} />
+      )}
+
+      {currentStep === "submission" && examResult && (
+        <SubmissionPage examResult={examResult} onBackToWelcome={handleBackToWelcome} />
+      )}
     </div>
   )
 }

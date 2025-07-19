@@ -1,66 +1,33 @@
 "use client"
 
-import type React from "react"
-
 import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
 import { User, Mail, Phone, Briefcase, GraduationCap, Clock, FileText } from "lucide-react"
-import type { UserBio } from "../utils/types"
+import type { UserBio } from "../page"
 import { Badge } from "@/components/ui/badge"
 
 interface BioPageProps {
   userBio: UserBio
   onUpdateBio: (bio: UserBio) => void
+  onNext: () => void
 }
 
-export default function BioPage({ userBio, onUpdateBio }: BioPageProps) {
-  const [bio, setBio] = useState<UserBio>({
-    firstName: userBio.firstName || "",
-    lastName: userBio.lastName || "",
-    email: userBio.email || "",
-    phone: userBio.phone || "",
-    position: userBio.position || "",
-    experience: userBio.experience || "",
-    education: userBio.education || "",
-    linkedIn: userBio.linkedIn || "",
-    resume: userBio.resume || undefined,
-    transcript: userBio.transcript || undefined,
-  })
+export default function BioPage({ userBio, onUpdateBio, onNext }: BioPageProps) {
+  const [formData, setFormData] = useState<UserBio>(userBio)
   const [errors, setErrors] = useState<Partial<UserBio>>({})
   const [uploadErrors, setUploadErrors] = useState<{ resume?: string; transcript?: string }>({})
   const resumeInputRef = useRef<HTMLInputElement>(null)
   const transcriptInputRef = useRef<HTMLInputElement>(null)
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setBio((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Basic validation
-    const newErrors: Partial<UserBio> = {}
-
-    if (!bio.firstName.trim()) newErrors.firstName = "First name is required"
-    if (!bio.lastName.trim()) newErrors.lastName = "Last name is required"
-    if (!bio.email.trim()) {
-      newErrors.email = "Email is required"
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(bio.email)) {
-      newErrors.email = "Please enter a valid email address"
-    }
-    if (!bio.phone.trim()) newErrors.phone = "Phone number is required"
-    if (!bio.position.trim()) newErrors.position = "Position is required"
-    if (!bio.experience.trim()) newErrors.experience = "Experience level is required"
-    if (!bio.education.trim()) newErrors.education = "Education is required"
-
-    setErrors(newErrors)
-    if (Object.keys(newErrors).length === 0) {
-      onUpdateBio(bio)
+  const updateField = (field: keyof UserBio, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: "" }))
     }
   }
 
@@ -76,9 +43,35 @@ export default function BioPage({ userBio, onUpdateBio }: BioPageProps) {
         return
       }
       setUploadErrors((prev) => ({ ...prev, [field]: "" }))
-      setBio((prev) => ({ ...prev, [field]: file }))
+      setFormData((prev) => ({ ...prev, [field]: file }))
     } else {
-      setBio((prev) => ({ ...prev, [field]: undefined }))
+      setFormData((prev) => ({ ...prev, [field]: undefined }))
+    }
+  }
+
+  const validateForm = (): boolean => {
+    const newErrors: Partial<UserBio> = {}
+
+    if (!formData.firstName.trim()) newErrors.firstName = "First name is required"
+    if (!formData.lastName.trim()) newErrors.lastName = "Last name is required"
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required"
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address"
+    }
+    if (!formData.phone.trim()) newErrors.phone = "Phone number is required"
+    if (!formData.position.trim()) newErrors.position = "Position is required"
+    if (!formData.experience.trim()) newErrors.experience = "Experience level is required"
+    if (!formData.education.trim()) newErrors.education = "Education is required"
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleSubmit = () => {
+    if (validateForm()) {
+      onUpdateBio(formData)
+      onNext()
     }
   }
 
@@ -98,7 +91,6 @@ export default function BioPage({ userBio, onUpdateBio }: BioPageProps) {
             <User className="w-5 h-5 text-blue-600" />
             Candidate Information
           </CardTitle>
-          <CardDescription>Please fill out your details to proceed.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Personal Details */}
@@ -109,12 +101,10 @@ export default function BioPage({ userBio, onUpdateBio }: BioPageProps) {
               </Label>
               <Input
                 id="firstName"
-                name="firstName"
-                value={bio.firstName}
-                onChange={handleChange}
+                value={formData.firstName}
+                onChange={(e) => updateField("firstName", e.target.value)}
                 placeholder="Enter your first name"
                 className={errors.firstName ? "border-red-500" : ""}
-                required
               />
               {errors.firstName && <p className="text-sm text-red-600">{errors.firstName}</p>}
             </div>
@@ -125,12 +115,10 @@ export default function BioPage({ userBio, onUpdateBio }: BioPageProps) {
               </Label>
               <Input
                 id="lastName"
-                name="lastName"
-                value={bio.lastName}
-                onChange={handleChange}
+                value={formData.lastName}
+                onChange={(e) => updateField("lastName", e.target.value)}
                 placeholder="Enter your last name"
                 className={errors.lastName ? "border-red-500" : ""}
-                required
               />
               {errors.lastName && <p className="text-sm text-red-600">{errors.lastName}</p>}
             </div>
@@ -145,13 +133,11 @@ export default function BioPage({ userBio, onUpdateBio }: BioPageProps) {
               </Label>
               <Input
                 id="email"
-                name="email"
                 type="email"
-                value={bio.email}
-                onChange={handleChange}
+                value={formData.email}
+                onChange={(e) => updateField("email", e.target.value)}
                 placeholder="your.email@example.com"
                 className={errors.email ? "border-red-500" : ""}
-                required
               />
               {errors.email && <p className="text-sm text-red-600">{errors.email}</p>}
             </div>
@@ -163,12 +149,10 @@ export default function BioPage({ userBio, onUpdateBio }: BioPageProps) {
               </Label>
               <Input
                 id="phone"
-                name="phone"
-                value={bio.phone}
-                onChange={handleChange}
+                value={formData.phone}
+                onChange={(e) => updateField("phone", e.target.value)}
                 placeholder="(555) 123-4567"
                 className={errors.phone ? "border-red-500" : ""}
-                required
               />
               {errors.phone && <p className="text-sm text-red-600">{errors.phone}</p>}
             </div>
@@ -182,12 +166,10 @@ export default function BioPage({ userBio, onUpdateBio }: BioPageProps) {
             </Label>
             <Input
               id="position"
-              name="position"
-              value={bio.position}
-              onChange={handleChange}
+              value={formData.position}
+              onChange={(e) => updateField("position", e.target.value)}
               placeholder="e.g., Mechanical Engineer, Design Engineer, etc."
               className={errors.position ? "border-red-500" : ""}
-              required
             />
             {errors.position && <p className="text-sm text-red-600">{errors.position}</p>}
           </div>
@@ -197,7 +179,7 @@ export default function BioPage({ userBio, onUpdateBio }: BioPageProps) {
               <Clock className="w-4 h-4" />
               Years of Experience *
             </Label>
-            <Select value={bio.experience} onValueChange={(value) => setBio({ ...bio, experience: value })}>
+            <Select value={formData.experience} onValueChange={(value) => updateField("experience", value)}>
               <SelectTrigger className={errors.experience ? "border-red-500" : ""}>
                 <SelectValue placeholder="Select your experience level" />
               </SelectTrigger>
@@ -217,15 +199,19 @@ export default function BioPage({ userBio, onUpdateBio }: BioPageProps) {
               <GraduationCap className="w-4 h-4" />
               Highest Education *
             </Label>
-            <Textarea
-              id="education"
-              name="education"
-              value={bio.education}
-              onChange={handleChange}
-              placeholder="Describe your education background"
-              className={errors.education ? "border-red-500" : ""}
-              required
-            />
+            <Select value={formData.education} onValueChange={(value) => updateField("education", value)}>
+              <SelectTrigger className={errors.education ? "border-red-500" : ""}>
+                <SelectValue placeholder="Select your education level" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="high-school">High School Diploma</SelectItem>
+                <SelectItem value="associate">Associate Degree</SelectItem>
+                <SelectItem value="bachelor">Bachelor's Degree</SelectItem>
+                <SelectItem value="master">Master's Degree</SelectItem>
+                <SelectItem value="phd">PhD/Doctorate</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
             {errors.education && <p className="text-sm text-red-600">{errors.education}</p>}
           </div>
 
@@ -236,9 +222,8 @@ export default function BioPage({ userBio, onUpdateBio }: BioPageProps) {
             </Label>
             <Input
               id="linkedIn"
-              name="linkedIn"
-              value={bio.linkedIn}
-              onChange={handleChange}
+              value={formData.linkedIn}
+              onChange={(e) => updateField("linkedIn", e.target.value)}
               placeholder="https://linkedin.com/in/yourprofile"
             />
           </div>
@@ -269,11 +254,11 @@ export default function BioPage({ userBio, onUpdateBio }: BioPageProps) {
                   className="flex items-center gap-2"
                 >
                   <FileText className="w-4 h-4" />
-                  {bio.resume ? "Change Resume" : "Upload Resume"}
+                  {formData.resume ? "Change Resume" : "Upload Resume"}
                 </Button>
-                {bio.resume && (
+                {formData.resume && (
                   <div className="flex items-center gap-2">
-                    <Badge variant="secondary">{bio.resume.name}</Badge>
+                    <Badge variant="secondary">{formData.resume.name}</Badge>
                     <Button
                       type="button"
                       variant="ghost"
@@ -314,11 +299,11 @@ export default function BioPage({ userBio, onUpdateBio }: BioPageProps) {
                   className="flex items-center gap-2"
                 >
                   <GraduationCap className="w-4 h-4" />
-                  {bio.transcript ? "Change Transcript" : "Upload Transcript"}
+                  {formData.transcript ? "Change Transcript" : "Upload Transcript"}
                 </Button>
-                {bio.transcript && (
+                {formData.transcript && (
                   <div className="flex items-center gap-2">
-                    <Badge variant="secondary">{bio.transcript.name}</Badge>
+                    <Badge variant="secondary">{formData.transcript.name}</Badge>
                     <Button
                       type="button"
                       variant="ghost"
@@ -344,7 +329,7 @@ export default function BioPage({ userBio, onUpdateBio }: BioPageProps) {
               <p className="text-sm text-gray-600">
                 All fields marked with * are required. Your information will be kept confidential.
               </p>
-              <Button type="submit" onClick={handleSubmit} size="lg" className="bg-blue-600 hover:bg-blue-700 w-full">
+              <Button onClick={handleSubmit} size="lg" className="bg-blue-600 hover:bg-blue-700">
                 Continue to Assessment
               </Button>
             </div>
