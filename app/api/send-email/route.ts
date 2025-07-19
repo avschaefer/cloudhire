@@ -1,50 +1,44 @@
+import { type NextRequest, NextResponse } from "next/server"
+import { Resend } from "resend"
+import { getResendApiKey, getResendFromEmail, getResendToEmail } from "@/lib/config"
+
 export const runtime = "edge"
 
-import { type NextRequest, NextResponse } from "next/server"
-import { sendReportEmail, sendCandidateConfirmation } from "@/app/utils/email-service"
-import type { CandidateInfo, ExamSession } from "@/app/utils/email-service"
-import type { ExamResult } from "@/utils/grader"
+const resend = new Resend(getResendApiKey())
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { candidate, session, result, type } = body
+    const { htmlReport, candidateName, position, reportData } = await request.json()
 
-    if (!candidate || !session || !result) {
-      return NextResponse.json({ error: "Missing required fields: candidate, session, result" }, { status: 400 })
+    if (!htmlReport || !candidateName || !position) {
+      return NextResponse.json({ success: false, error: "Missing required fields" }, { status: 400 })
     }
 
-    let emailResult
+    const fromEmail = getResendFromEmail()
+    const toEmail = getResendToEmail()
 
-    if (type === "candidate-confirmation") {
-      emailResult = await sendCandidateConfirmation(
-        candidate as CandidateInfo,
-        {
-          ...session,
-          startTime: new Date(session.startTime),
-          endTime: new Date(session.endTime),
-        } as ExamSession,
-      )
-    } else {
-      // Default to sending report email
-      emailResult = await sendReportEmail(
-        candidate as CandidateInfo,
-        {
-          ...session,
-          startTime: new Date(session.startTime),
-          endTime: new Date(session.endTime),
-        } as ExamSession,
-        result as ExamResult,
-      )
+    if (!fromEmail || !toEmail) {
+      return NextResponse.json({ success: false, error: "Email configuration missing" }, { status: 500 })
     }
 
-    if (emailResult.success) {
-      return NextResponse.json({ success: true })
-    } else {
-      return NextResponse.json({ error: emailResult.error || "Failed to send email" }, { status: 500 })
+    const emailResult = await resend.emails.send({
+      from: fromEmail,
+      to: toEmail,
+      subject: `Technical Exam Report - ${candidateName} (${position})`,
+      html: htmlReport,
+    })
+
+    if (emailResult.error) {
+      console.error("Resend error:", emailResult.error)
+      return NextResponse.json({ success: false, error: "Failed to send email" }, { status: 500 })
     }
+
+    return NextResponse.json({
+      success: true,
+      emailId: emailResult.data?.id,
+    })
   } catch (error) {
-    console.error("Error in send-email API:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("Email API error:", error)
+    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 })
   }
 }

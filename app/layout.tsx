@@ -8,8 +8,8 @@ import { Toaster } from "@/components/ui/toaster"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "CloudHire - Technical Assessment Platform",
-  description: "AI-powered technical assessment platform for hiring",
+  title: "Technical Assessment Platform",
+  description: "AI-powered technical exam platform for hiring",
     generator: 'v0.dev'
 }
 

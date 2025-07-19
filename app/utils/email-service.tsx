@@ -1,5 +1,5 @@
 import { Resend } from "resend"
-import { getResendApiKey, getResendFromEmail, getResendToEmail, getSiteUrl } from "@/lib/config"
+import { getResendApiKey, getResendFromEmail } from "@/lib/config"
 import type { ExamResult } from "@/utils/grader"
 
 const resend = new Resend(getResendApiKey())
@@ -20,7 +20,7 @@ export interface ExamSession {
 
 // Generate HTML report
 export const generateHTMLReport = (candidate: CandidateInfo, session: ExamSession, result: ExamResult): string => {
-  const siteUrl = getSiteUrl()
+  const siteUrl = "https://example.com" // Placeholder for getSiteUrl()
 
   return `
     <!DOCTYPE html>
@@ -84,56 +84,50 @@ export const generateHTMLReport = (candidate: CandidateInfo, session: ExamSessio
 }
 
 // Download HTML report (for client-side use)
-export const downloadHTMLReport = (candidate: CandidateInfo, session: ExamSession, result: ExamResult): void => {
-  const htmlContent = generateHTMLReport(candidate, session, result)
+export function downloadHTMLReport(htmlContent: string, filename: string): void {
+  if (typeof window === "undefined") return
+
   const blob = new Blob([htmlContent], { type: "text/html" })
   const url = URL.createObjectURL(blob)
-
-  const link = document.createElement("a")
-  link.href = url
-  link.download = `exam-report-${candidate.name.replace(/\s+/g, "-")}-${session.sessionId}.html`
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
+  const a = document.createElement("a")
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
   URL.revokeObjectURL(url)
 }
 
 // Send report email
-export const sendReportEmail = async (
-  candidate: CandidateInfo,
-  session: ExamSession,
-  result: ExamResult,
-): Promise<{ success: boolean; error?: string }> => {
+export async function sendReportEmail(
+  htmlReport: string,
+  candidateName: string,
+  position: string,
+  reportData?: any,
+): Promise<boolean> {
   try {
-    const fromEmail = getResendFromEmail()
-    const toEmail = getResendToEmail()
+    const response = await fetch("/api/send-email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        htmlReport,
+        candidateName,
+        position,
+        reportData,
+      }),
+    })
 
-    if (!getResendApiKey()) {
-      throw new Error("Resend API key not configured")
+    if (!response.ok) {
+      throw new Error(`Email API failed: ${response.status}`)
     }
 
-    const htmlContent = generateHTMLReport(candidate, session, result)
-
-    const emailData = {
-      from: fromEmail,
-      to: [toEmail],
-      subject: `Technical Exam Report - ${candidate.name} (${result.percentage}%)`,
-      html: htmlContent,
-    }
-
-    const response = await resend.emails.send(emailData)
-
-    if (response.error) {
-      throw new Error(response.error.message)
-    }
-
-    return { success: true }
+    const result = await response.json()
+    return result.success
   } catch (error) {
-    console.error("Error sending report email:", error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error occurred",
-    }
+    console.error("Failed to send email:", error)
+    return false
   }
 }
 

@@ -8,35 +8,19 @@ export interface Question {
   options?: string
 }
 
-export async function fetchAndParseQuestionsCsv(): Promise<Question[]> {
-  try {
-    console.log("Fetching questions from local CSV file...")
-    const response = await fetch("/Questions.csv")
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch CSV: ${response.status} ${response.statusText}`)
-    }
-
-    const csvText = await response.text()
-    console.log("CSV file loaded, parsing content...")
-
-    return parseCSV(csvText)
-  } catch (error) {
-    console.error("Error fetching or parsing CSV:", error)
-    throw new Error("Failed to load exam questions")
-  }
-}
-
-function parseCSV(csvText: string): Question[] {
+export function parseCSV(csvText: string): Question[] {
   const lines = csvText.trim().split("\n")
-  const headers = lines[0].split(",").map((h) => h.trim().replace(/"/g, ""))
+  if (lines.length < 2) {
+    throw new Error("CSV file appears to be empty or invalid")
+  }
 
+  const headers = lines[0].split(",").map((h) => h.trim().replace(/"/g, ""))
   const questions: Question[] = []
 
   for (let i = 1; i < lines.length; i++) {
     const values = parseCSVLine(lines[i])
 
-    if (values.length >= headers.length) {
+    if (values.length >= 6) {
       const question: Question = {
         ID: Number.parseInt(values[0]) || i,
         question: values[1] || "",
@@ -76,6 +60,25 @@ function parseCSVLine(line: string): string[] {
   return result
 }
 
+export async function fetchAndParseQuestionsCsv(): Promise<Question[]> {
+  try {
+    console.log("Fetching questions from local CSV file...")
+    const response = await fetch("/Questions.csv")
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch CSV: ${response.status} ${response.statusText}`)
+    }
+
+    const csvText = await response.text()
+    console.log("CSV file loaded, parsing content...")
+
+    return parseCSV(csvText)
+  } catch (error) {
+    console.error("Error fetching or parsing CSV:", error)
+    throw new Error("Failed to load exam questions")
+  }
+}
+
 export function getInitialExamData(questions: Question[]) {
   const examData = {
     multipleChoice: {} as { [key: string]: string },
@@ -84,13 +87,12 @@ export function getInitialExamData(questions: Question[]) {
   }
 
   questions.forEach((question) => {
-    if (question.type === "multipleChoice") {
+    if (question.type.toLowerCase().includes("multiple")) {
       examData.multipleChoice[question.ID.toString()] = ""
-    } else if (question.type === "concepts") {
+    } else if (question.type.toLowerCase().includes("concept")) {
       examData.concepts[question.ID.toString()] = ""
-    } else if (question.type === "calculations") {
-      examData.calculations[`${question.ID}-answer`] = ""
-      examData.calculations[`${question.ID}-explanation`] = ""
+    } else {
+      examData.calculations[question.ID.toString()] = ""
     }
   })
 

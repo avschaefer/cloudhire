@@ -1,233 +1,134 @@
 import json
 import os
-from typing import Dict, List, Any
+from typing import Dict, Any, List
 
-def lambda_handler(event, context):
-    """
-    AWS Lambda handler for grading technical exams using Grok AI
-    """
-    try:
-        # Parse the request body
-        if isinstance(event.get('body'), str):
-            body = json.loads(event['body'])
-        else:
-            body = event.get('body', {})
-        
-        questions = body.get('questions', [])
-        answers = body.get('answers', {})
-        api_key = body.get('apiKey') or os.environ.get('XAI_API_KEY')
-        
-        if not api_key:
-            return {
-                'statusCode': 400,
-                'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-                    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-                },
-                'body': json.dumps({
-                    'error': 'XAI API key is required'
-                })
+async def on_fetch(request, env):
+    # Handle CORS preflight
+    if request.method == "OPTIONS":
+        return Response(None, {
+            "status": 200,
+            "headers": {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "POST, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type",
             }
-        
-        # Grade the exam using Grok
-        result = grade_exam_with_grok(questions, answers, api_key)
-        
-        return {
-            'statusCode': 200,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'POST, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-            },
-            'body': json.dumps(result)
-        }
-        
-    except Exception as e:
-        return {
-            'statusCode': 500,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            'body': json.dumps({
-                'error': f'Internal server error: {str(e)}'
-            })
-        }
-
-def grade_exam_with_grok(questions: List[Dict], answers: Dict, api_key: str) -> Dict[str, Any]:
-    """
-    Grade exam using Grok AI API
-    """
-    try:
-        import requests
-        
-        # Prepare the prompt for Grok
-        prompt = create_grading_prompt(questions, answers)
-        
-        # Call Grok API
-        headers = {
-            'Authorization': f'Bearer {api_key}',
-            'Content-Type': 'application/json'
-        }
-        
-        payload = {
-            'messages': [
-                {
-                    'role': 'system',
-                    'content': 'You are an expert technical interviewer and grader. Provide detailed, constructive feedback on technical exam responses.'
-                },
-                {
-                    'role': 'user',
-                    'content': prompt
-                }
-            ],
-            'model': 'grok-beta',
-            'temperature': 0.3,
-            'max_tokens': 2000
-        }
-        
-        response = requests.post(
-            'https://api.x.ai/v1/chat/completions',
-            headers=headers,
-            json=payload,
-            timeout=30
-        )
-        
-        if response.status_code == 200:
-            grok_response = response.json()
-            content = grok_response['choices'][0]['message']['content']
-            
-            # Parse the response and structure it
-            return parse_grok_response(content, questions, answers)
-        else:
-            # Fallback to basic grading if Grok fails
-            return create_fallback_grading(questions, answers)
-            
-    except Exception as e:
-        print(f"Error calling Grok API: {e}")
-        return create_fallback_grading(questions, answers)
-
-def create_grading_prompt(questions: List[Dict], answers: Dict) -> str:
-    """
-    Create a detailed prompt for Grok to grade the exam
-    """
-    prompt = "Please grade this technical exam and provide detailed feedback. Return your response in JSON format with the following structure:\n\n"
-    prompt += "{\n"
-    prompt += '  "totalScore": <number>,\n'
-    prompt += '  "maxScore": <number>,\n'
-    prompt += '  "percentage": <number>,\n'
-    prompt += '  "results": [\n'
-    prompt += '    {\n'
-    prompt += '      "questionId": <number>,\n'
-    prompt += '      "score": <number>,\n'
-    prompt += '      "maxScore": <number>,\n'
-    prompt += '      "feedback": "<detailed feedback>",\n'
-    prompt += '      "category": "<category>"\n'
-    prompt += '    }\n'
-    prompt += '  ],\n'
-    prompt += '  "overallFeedback": "<overall assessment>"\n'
-    prompt += "}\n\n"
-    
-    prompt += "Questions and Answers:\n\n"
-    
-    for i, question in enumerate(questions, 1):
-        prompt += f"Question {i} (ID: {question.get('ID', i)}):\n"
-        prompt += f"Type: {question.get('type', 'Unknown')}\n"
-        prompt += f"Category: {question.get('category', 'General')}\n"
-        prompt += f"Difficulty: {question.get('difficulty', 'Medium')}\n"
-        prompt += f"Points: {question.get('points', 10)}\n"
-        prompt += f"Question: {question.get('question', '')}\n"
-        
-        # Find the answer for this question
-        question_id = question.get('ID', i)
-        answer = None
-        
-        # Check all answer sections
-        for section in ['multipleChoice', 'concepts', 'calculations']:
-            if section in answers and str(question_id) in answers[section]:
-                answer = answers[section][str(question_id)]
-                break
-        
-        prompt += f"Answer: {answer or 'No answer provided'}\n\n"
-    
-    return prompt
-
-def parse_grok_response(content: str, questions: List[Dict], answers: Dict) -> Dict[str, Any]:
-    """
-    Parse Grok's response and structure it properly
-    """
-    try:
-        # Try to extract JSON from the response
-        import re
-        json_match = re.search(r'\{.*\}', content, re.DOTALL)
-        if json_match:
-            result = json.loads(json_match.group())
-            return result
-        else:
-            # If no JSON found, create structured response from text
-            return create_fallback_grading(questions, answers)
-    except:
-        return create_fallback_grading(questions, answers)
-
-def create_fallback_grading(questions: List[Dict], answers: Dict) -> Dict[str, Any]:
-    """
-    Create a basic fallback grading when AI grading fails
-    """
-    results = []
-    total_score = 0
-    max_score = 0
-    
-    for question in questions:
-        question_id = question.get('ID', 0)
-        points = question.get('points', 10)
-        max_score += points
-        
-        # Check if question was answered
-        answer = None
-        for section in ['multipleChoice', 'concepts', 'calculations']:
-            if section in answers and str(question_id) in answers[section]:
-                answer = answers[section][str(question_id)]
-                break
-        
-        # Basic scoring
-        if answer and answer.strip():
-            score = int(points * 0.7)  # Give 70% for attempting
-            feedback = "Answer provided - detailed AI grading unavailable"
-        else:
-            score = 0
-            feedback = "No answer provided"
-        
-        total_score += score
-        
-        results.append({
-            'questionId': question_id,
-            'score': score,
-            'maxScore': points,
-            'feedback': feedback,
-            'category': question.get('category', 'General')
         })
     
-    percentage = int((total_score / max_score) * 100) if max_score > 0 else 0
+    if request.method != "POST":
+        return Response("Method not allowed", {"status": 405})
+    
+    try:
+        data = await request.json()
+        exam_data = data.get("examData", {})
+        user_bio = data.get("userBio", {})
+        questions = data.get("questions", [])
+        
+        # Use XAI API key from environment
+        api_key = env.get("XAI_API_KEY")
+        if not api_key:
+            return fallback_grading(exam_data, questions)
+        
+        # Grade using Grok
+        grading_result = await grade_with_grok(exam_data, questions, api_key)
+        
+        return Response(json.dumps(grading_result), {
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+            }
+        })
+        
+    except Exception as e:
+        print(f"Grading error: {e}")
+        return fallback_grading(exam_data, questions)
+
+async def grade_with_grok(exam_data: Dict, questions: List, api_key: str):
+    """Grade exam using Grok AI"""
+    try:
+        import aiohttp
+        
+        prompt = f"""
+        Grade this technical exam based on the questions and answers provided.
+        
+        Questions: {json.dumps(questions, indent=2)}
+        Answers: {json.dumps(exam_data, indent=2)}
+        
+        Provide a detailed grading with:
+        1. Overall score (0-100)
+        2. Detailed feedback
+        3. Breakdown by section
+        
+        Return as JSON with this structure:
+        {{
+            "score": 85,
+            "feedback": "Overall performance was good...",
+            "breakdown": {{
+                "multipleChoice": {{"correct": 7, "total": 10}},
+                "concepts": {{"score": 80, "feedback": "Good understanding..."}},
+                "calculations": {{"score": 90, "feedback": "Excellent work..."}}
+            }}
+        }}
+        """
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                "https://api.x.ai/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "model": "grok-3",
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.3
+                }
+            ) as response:
+                if response.status == 200:
+                    result = await response.json()
+                    content = result["choices"][0]["message"]["content"]
+                    return json.loads(content)
+                else:
+                    raise Exception(f"Grok API error: {response.status}")
+                    
+    except Exception as e:
+        print(f"Grok grading failed: {e}")
+        return fallback_grading(exam_data, questions)
+
+def fallback_grading(exam_data: Dict, questions: List) -> Dict[str, Any]:
+    """Fallback grading when AI is unavailable"""
+    total_score = 0
+    max_score = 0
+    mc_correct = 0
+    mc_total = 0
+    
+    for question in questions:
+        points = question.get("points", 10)
+        max_score += points
+        
+        if "multiple" in question.get("type", "").lower():
+            mc_total += 1
+            user_answer = exam_data.get("multipleChoice", {}).get(str(question["ID"]))
+            correct_answer = question.get("answer")
+            
+            if user_answer and correct_answer and user_answer.strip().lower() == correct_answer.strip().lower():
+                mc_correct += 1
+                total_score += points
+        else:
+            # Open-ended questions get partial credit
+            answer = (exam_data.get("concepts", {}).get(str(question["ID"])) or 
+                     exam_data.get("calculations", {}).get(str(question["ID"])))
+            
+            if answer and len(answer.strip()) > 10:
+                total_score += int(points * 0.7)  # 70% for attempting
+    
+    final_score = round((total_score / max_score) * 100) if max_score > 0 else 0
     
     return {
-        'totalScore': total_score,
-        'maxScore': max_score,
-        'percentage': percentage,
-        'results': results,
-        'overallFeedback': f'Exam completed with {percentage}% score. Basic grading applied - AI grading temporarily unavailable.'
-    }
-
-# Handle CORS preflight requests
-def handle_options():
-    return {
-        'statusCode': 200,
-        'headers': {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-        },
-        'body': ''
+        "score": final_score,
+        "feedback": f"Exam completed with {final_score}% score. Multiple choice: {mc_correct}/{mc_total} correct.",
+        "breakdown": {
+            "multipleChoice": {"correct": mc_correct, "total": mc_total},
+            "concepts": {"score": 70, "feedback": "Partial credit given"},
+            "calculations": {"score": 70, "feedback": "Partial credit given"}
+        }
     }

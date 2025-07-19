@@ -9,10 +9,10 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Optimize for Cloudflare Pages
-  experimental: {
-    optimizeCss: true,
-  },
+  // Remove optimizeCss to avoid "self is not defined" error
+  // experimental: {
+  //   optimizeCss: true,
+  // },
   // Webpack optimizations for smaller bundles
   webpack: (config, { isServer }) => {
     // Reduce bundle size

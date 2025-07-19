@@ -1,11 +1,11 @@
 ID,Question,Type,Category,Difficulty,Points,Options
-1,"What is the primary purpose of a database index?","Multiple Choice","Database","Easy",10,"Improve query performance,Store data,Backup data,Delete records"
-2,"Explain the difference between SQL and NoSQL databases.","Open Ended","Database","Medium",15,
-3,"Calculate the time complexity of binary search.","Calculation","Algorithms","Medium",15,
-4,"What is the difference between GET and POST HTTP methods?","Multiple Choice","Web Development","Easy",10,"GET retrieves data POST sends data,GET is secure POST is not,GET is faster POST is slower,No difference"
+1,"What is the time complexity of binary search?","Multiple Choice","Algorithms","Easy",10,"O(n), O(log n), O(n^2), O(1)"
+2,"Explain the difference between SQL and NoSQL databases","Open Ended","Databases","Medium",15,
+3,"Calculate the factorial of 5 and show your work","Calculation","Mathematics","Easy",10,
+4,"What is polymorphism in object-oriented programming?","Multiple Choice","Programming","Medium",10,"Inheritance, Encapsulation, Polymorphism, Abstraction"
 5,"Describe how you would implement user authentication in a web application.","Open Ended","Security","Hard",20,
 6,"Calculate the space complexity of a recursive factorial function.","Calculation","Algorithms","Medium",15,
-7,"What is the purpose of CSS Grid?","Multiple Choice","Frontend","Easy",10,"Layout design,Database queries,Server requests,File storage"
-8,"Explain the concept of microservices architecture.","Open Ended","Architecture","Hard",20,
+7,"What is the difference between HTTP and HTTPS?","Multiple Choice","Networking","Easy",10,"Encryption, Port numbers, Speed, All of the above"
+8,"Explain how garbage collection works in Java","Open Ended","Programming","Hard",20,
 9,"Calculate the number of possible combinations for a 4-digit PIN.","Calculation","Mathematics","Easy",10,
-10,"What is the main advantage of using TypeScript over JavaScript?","Multiple Choice","Programming","Medium",15,"Type safety,Faster execution,Smaller file size,Better graphics"
+10,"What is a REST API?","Multiple Choice","Web Development","Medium",10,"Database, API Architecture, Programming Language, Framework"

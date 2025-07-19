@@ -1,18 +1,14 @@
 name = "cloudhire"
-compatibility_date = "2025-01-19"
+compatibility_date = "2025-07-19"
 pages_build_output_dir = ".next"
-
-# Temporarily comment out D1 binding until database is created
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "exam-db"
-# database_id = "your-d1-database-id-here"
 
 [vars]
 AI_GRADER_WORKER_URL = "https://ai-grader-worker.youraccount.workers.dev/"
 
+# Optional: Preview environment overrides
 [env.preview.vars]
-AI_GRADER_WORKER_URL = "https://ai-grader-worker-preview.youraccount.workers.dev/"
+# AI_GRADER_WORKER_URL = "https://staging-ai-grader.youraccount.workers.dev/"
 
+# Optional: Production environment overrides  
 [env.production.vars]
-AI_GRADER_WORKER_URL = "https://ai-grader-worker.youraccount.workers.dev/"
+# AI_GRADER_WORKER_URL = "https://ai-grader-worker.youraccount.workers.dev/"
