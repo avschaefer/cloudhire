@@ -10,9 +10,6 @@ const nextConfig = {
     unoptimized: true,
   },
   // Optimize for Cloudflare Pages
-  output: 'export',
-  trailingSlash: true,
-  // Reduce bundle size
   experimental: {
     optimizeCss: true,
   },
@@ -23,12 +20,12 @@ const nextConfig = {
       ...config.optimization,
       splitChunks: {
         chunks: 'all',
+        maxSize: 244000, // ~240KB chunks
         cacheGroups: {
           vendor: {
             test: /[\\/]node_modules[\\/]/,
             name: 'vendors',
             chunks: 'all',
-            maxSize: 244000, // ~240KB chunks
           },
         },
       },

@@ -1,74 +1,147 @@
-// D1 Database utilities - will be enabled when database is configured
+import { getD1Database } from "@/lib/config"
+import type { ExamResult } from "@/utils/grader"
+import type { CandidateInfo, ExamSession } from "@/app/utils/email-service"
 
-export interface ExamSubmission {
+export interface ExamRecord {
   id: string
-  candidateName: string
-  candidateEmail: string
+  candidate_name: string
+  candidate_email: string
   position: string
-  examData: any
-  gradingResult: any
-  submittedAt: string
-  createdAt: string
+  company?: string
+  session_id: string
+  start_time: string
+  end_time: string
+  duration: number
+  total_score: number
+  max_score: number
+  percentage: number
+  results: string // JSON string
+  overall_feedback: string
+  created_at: string
 }
 
-// This will be enabled when D1 database is configured
-export async function storeExamSubmission(data: Omit<ExamSubmission, "createdAt">): Promise<boolean> {
+// Save exam result to D1 database
+export const saveExamResult = async (
+  candidate: CandidateInfo,
+  session: ExamSession,
+  result: ExamResult,
+): Promise<{ success: boolean; error?: string }> => {
   try {
-    // Placeholder for D1 database operations
-    console.log("Would store exam submission:", data.id)
+    const db = getD1Database()
 
-    /* 
-    // This will be enabled when D1 is configured:
-    const db = process.env.DB // D1 binding
-    
-    await db.prepare(`
-      INSERT INTO exam_submissions 
-      (id, candidate_name, candidate_email, position, exam_data, grading_result, submitted_at, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      data.id,
-      data.candidateName,
-      data.candidateEmail,
-      data.position,
-      JSON.stringify(data.examData),
-      JSON.stringify(data.gradingResult),
-      data.submittedAt,
-      new Date().toISOString()
-    ).run()
-    */
+    if (!db) {
+      console.log("D1 database not available, skipping save")
+      return { success: false, error: "Database not configured" }
+    }
 
-    return true
+    const record: Omit<ExamRecord, "id" | "created_at"> = {
+      candidate_name: candidate.name,
+      candidate_email: candidate.email,
+      position: candidate.position,
+      company: candidate.company,
+      session_id: session.sessionId,
+      start_time: session.startTime.toISOString(),
+      end_time: session.endTime.toISOString(),
+      duration: session.duration,
+      total_score: result.totalScore,
+      max_score: result.maxScore,
+      percentage: result.percentage,
+      results: JSON.stringify(result.results),
+      overall_feedback: result.overallFeedback,
+    }
+
+    const stmt = db.prepare(`
+      INSERT INTO exam_results (
+        candidate_name, candidate_email, position, company, session_id,
+        start_time, end_time, duration, total_score, max_score, percentage,
+        results, overall_feedback, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+    `)
+
+    await stmt
+      .bind(
+        record.candidate_name,
+        record.candidate_email,
+        record.position,
+        record.company,
+        record.session_id,
+        record.start_time,
+        record.end_time,
+        record.duration,
+        record.total_score,
+        record.max_score,
+        record.percentage,
+        record.results,
+        record.overall_feedback,
+      )
+      .run()
+
+    return { success: true }
   } catch (error) {
-    console.error("Failed to store exam submission:", error)
-    return false
+    console.error("Error saving exam result to D1:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Database error",
+    }
   }
 }
 
-export async function getExamSubmission(id: string): Promise<ExamSubmission | null> {
+// Get exam results by session ID
+export const getExamResult = async (sessionId: string): Promise<ExamRecord | null> => {
   try {
-    // Placeholder for D1 database operations
-    console.log("Would retrieve exam submission:", id)
+    const db = getD1Database()
 
-    /* 
-    // This will be enabled when D1 is configured:
-    const db = process.env.DB // D1 binding
-    
-    const result = await db.prepare(`
-      SELECT * FROM exam_submissions WHERE id = ?
-    `).bind(id).first()
-    
-    if (!result) return null
-    
-    return {
-      ...result,
-      examData: JSON.parse(result.exam_data),
-      gradingResult: JSON.parse(result.grading_result)
+    if (!db) {
+      return null
     }
-    */
 
-    return null
+    const stmt = db.prepare("SELECT * FROM exam_results WHERE session_id = ?")
+    const result = await stmt.bind(sessionId).first()
+
+    return result as ExamRecord | null
   } catch (error) {
-    console.error("Failed to retrieve exam submission:", error)
+    console.error("Error getting exam result from D1:", error)
     return null
+  }
+}
+
+// Get all exam results (for admin view)
+export const getAllExamResults = async (): Promise<ExamRecord[]> => {
+  try {
+    const db = getD1Database()
+
+    if (!db) {
+      return []
+    }
+
+    const stmt = db.prepare("SELECT * FROM exam_results ORDER BY created_at DESC")
+    const results = await stmt.all()
+
+    return results.results as ExamRecord[]
+  } catch (error) {
+    console.error("Error getting all exam results from D1:", error)
+    return []
+  }
+}
+
+// Delete exam result
+export const deleteExamResult = async (sessionId: string): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const db = getD1Database()
+
+    if (!db) {
+      return { success: false, error: "Database not configured" }
+    }
+
+    const stmt = db.prepare("DELETE FROM exam_results WHERE session_id = ?")
+    await stmt.bind(sessionId).run()
+
+    return { success: true }
+  } catch (error) {
+    console.error("Error deleting exam result from D1:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Database error",
+    }
   }
 }

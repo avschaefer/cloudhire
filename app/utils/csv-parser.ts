@@ -1,10 +1,11 @@
 export interface Question {
-  ID: string
-  type: "multipleChoice" | "concepts" | "calculations"
+  ID: number
+  type: string
+  category: string
   difficulty: string
+  points: number
   question: string
-  options?: string[]
-  answer?: string
+  options?: string
 }
 
 export async function fetchAndParseQuestionsCsv(): Promise<Question[]> {
@@ -19,121 +20,42 @@ export async function fetchAndParseQuestionsCsv(): Promise<Question[]> {
     const csvText = await response.text()
     console.log("CSV file loaded, parsing content...")
 
-    return parseQuestionsFromCsv(csvText)
+    return parseCSV(csvText)
   } catch (error) {
     console.error("Error fetching or parsing CSV:", error)
     throw new Error("Failed to load exam questions")
   }
 }
 
-function parseQuestionsFromCsv(csvText: string): Question[] {
+function parseCSV(csvText: string): Question[] {
   const lines = csvText.trim().split("\n")
-  if (lines.length < 2) {
-    throw new Error("CSV file appears to be empty or invalid")
-  }
-
-  // Parse headers and normalize them
   const headers = lines[0].split(",").map((h) => h.trim().replace(/"/g, ""))
-  console.log("CSV Headers found:", headers)
-
-  // Create header mapping for case-insensitive lookup
-  const headerMap: { [key: string]: number } = {}
-  headers.forEach((header, index) => {
-    headerMap[header.toLowerCase()] = index
-  })
 
   const questions: Question[] = []
 
   for (let i = 1; i < lines.length; i++) {
-    try {
-      const values = parseCsvLine(lines[i])
+    const values = parseCSVLine(lines[i])
 
-      if (values.length < headers.length) {
-        console.warn(`Row ${i + 1} has fewer values than headers, skipping`)
-        continue
+    if (values.length >= headers.length) {
+      const question: Question = {
+        ID: Number.parseInt(values[0]) || i,
+        question: values[1] || "",
+        type: values[2] || "Open Ended",
+        category: values[3] || "General",
+        difficulty: values[4] || "Medium",
+        points: Number.parseInt(values[5]) || 10,
+        options: values[6] || undefined,
       }
 
-      // Extract basic question data
-      const id = getValue(values, headerMap, "id")
-      const type = getValue(values, headerMap, "type")
-      const difficulty = getValue(values, headerMap, "difficulty")
-      const question = getValue(values, headerMap, "question")
-      const answer = getValue(values, headerMap, "answer")
-
-      if (!id || !type || !question) {
-        console.warn(`Row ${i + 1} missing required fields, skipping`)
-        continue
-      }
-
-      // Normalize question type
-      let normalizedType: "multipleChoice" | "concepts" | "calculations"
-      const typeStr = type.toLowerCase().trim()
-
-      if (typeStr.includes("multiple") || typeStr.includes("choice")) {
-        normalizedType = "multipleChoice"
-      } else if (typeStr.includes("concept")) {
-        normalizedType = "concepts"
-      } else if (typeStr.includes("calculation") || typeStr.includes("calc")) {
-        normalizedType = "calculations"
-      } else {
-        console.warn(`Unknown question type "${type}" in row ${i + 1}, defaulting to concepts`)
-        normalizedType = "concepts"
-      }
-
-      // Extract options for multiple choice questions
-      let options: string[] | undefined
-      if (normalizedType === "multipleChoice") {
-        options = []
-        for (let j = 1; j <= 4; j++) {
-          const option = getValue(values, headerMap, `option ${j}`) || getValue(values, headerMap, `option${j}`)
-          if (option && option.trim()) {
-            options.push(option.trim())
-          }
-        }
-        if (options.length === 0) {
-          options = undefined
-        }
-      }
-
-      const parsedQuestion: Question = {
-        ID: id.trim(),
-        type: normalizedType,
-        difficulty: difficulty?.trim() || "Medium",
-        question: question.trim(),
-        options,
-        answer: answer?.trim(),
-      }
-
-      questions.push(parsedQuestion)
-      console.log(`Parsed question ${id}: ${normalizedType}`)
-    } catch (error) {
-      console.error(`Error parsing row ${i + 1}:`, error)
-      continue
+      questions.push(question)
     }
-  }
-
-  console.log(`Successfully parsed ${questions.length} questions`)
-
-  // Log summary by type
-  const summary = questions.reduce(
-    (acc, q) => {
-      acc[q.type] = (acc[q.type] || 0) + 1
-      return acc
-    },
-    {} as Record<string, number>,
-  )
-
-  console.log("Question summary by type:", summary)
-
-  if (questions.length === 0) {
-    throw new Error("No valid questions found in CSV file")
   }
 
   return questions
 }
 
-function parseCsvLine(line: string): string[] {
-  const values: string[] = []
+function parseCSVLine(line: string): string[] {
+  const result: string[] = []
   let current = ""
   let inQuotes = false
 
@@ -141,35 +63,17 @@ function parseCsvLine(line: string): string[] {
     const char = line[i]
 
     if (char === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        // Escaped quote
-        current += '"'
-        i++ // Skip next quote
-      } else {
-        // Toggle quote state
-        inQuotes = !inQuotes
-      }
+      inQuotes = !inQuotes
     } else if (char === "," && !inQuotes) {
-      // End of field
-      values.push(current.trim())
+      result.push(current.trim())
       current = ""
     } else {
       current += char
     }
   }
 
-  // Add the last field
-  values.push(current.trim())
-
-  return values
-}
-
-function getValue(values: string[], headerMap: { [key: string]: number }, key: string): string | undefined {
-  const index = headerMap[key.toLowerCase()]
-  if (index !== undefined && index < values.length) {
-    return values[index]?.replace(/"/g, "").trim() || undefined
-  }
-  return undefined
+  result.push(current.trim())
+  return result
 }
 
 export function getInitialExamData(questions: Question[]) {
@@ -181,9 +85,9 @@ export function getInitialExamData(questions: Question[]) {
 
   questions.forEach((question) => {
     if (question.type === "multipleChoice") {
-      examData.multipleChoice[question.ID] = ""
+      examData.multipleChoice[question.ID.toString()] = ""
     } else if (question.type === "concepts") {
-      examData.concepts[question.ID] = ""
+      examData.concepts[question.ID.toString()] = ""
     } else if (question.type === "calculations") {
       examData.calculations[`${question.ID}-answer`] = ""
       examData.calculations[`${question.ID}-explanation`] = ""
