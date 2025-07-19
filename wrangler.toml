@@ -1,27 +1,12 @@
-name = "exam-web-app"
-compatibility_date = "2024-01-15"
+name = "cloudhire"
+compatibility_date = "2025-07-19"
+pages_build_output_dir = ".next"
 
-[env.production]
-name = "exam-web-app-production"
-
-[[env.production.d1_databases]]
+[[d1_databases]]
 binding = "DB"
-database_name = "exam_reports"
-database_id = "your-d1-database-id"
+database_name = "exam-db"
+database_id = "your-d1-id"  # Update this after D1 creation
 
-[env.development]
-name = "exam-web-app-development"
-
-[[env.development.d1_databases]]
-binding = "DB"
-database_name = "exam_reports_dev"
-database_id = "your-dev-d1-database-id"
-
-# Python Worker configuration
-[[workers]]
-name = "ai-grader-worker"
-main = "python/grader.py"
-compatibility_date = "2024-01-15"
-
-[workers.vars]
-# Set XAI_API_KEY in Cloudflare dashboard
+[vars]
+AI_GRADER_WORKER_URL = "https://ai-grader-worker.youraccount.workers.dev/"  # Update after Worker deployment
+NEXT_PUBLIC_SITE_URL = "https://cloudhire.app"  # For client-side usage

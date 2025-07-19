@@ -1,6 +1,20 @@
 import type { ExamData, UserBio } from "@/app/page"
 import type { Question } from "@/app/utils/csv-parser"
 
+// Modular configuration functions to avoid hardcoding
+
+export function getWorkerUrl(): string {
+  return process.env.AI_GRADER_WORKER_URL || "https://ai-grader-worker.youraccount.workers.dev/"
+}
+
+export function getSiteUrl(): string {
+  return process.env.NEXT_PUBLIC_SITE_URL || "https://cloudhire.app"
+}
+
+export function getDbBinding(): string {
+  return "DB" // D1 binding name from wrangler.toml
+}
+
 export function getGrokGradingPrompt(examData: ExamData, userBio: UserBio, questions: Question[]) {
   return `
 You are an expert technical evaluator for engineering positions. Please evaluate this technical exam submission.
@@ -75,12 +89,11 @@ export function getGrokModelConfig() {
 export function getEmailConfig() {
   return {
     fromEmail: process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev",
-    hiringManagerEmail: process.env.NEXT_PUBLIC_HIRING_MANAGER_EMAIL || "hiring@company.com",
+    hiringManagerEmail: process.env.NEXT_PUBLIC_HIRING_MANAGER_EMAIL || "hiring@cloudhire.app",
   }
 }
 
-export function getWorkerConfig() {
-  return {
-    workerUrl: process.env.AI_GRADER_WORKER_URL || "https://ai-grader-worker.youraccount.workers.dev/",
-  }
+export function isServiceBound(): boolean {
+  // Check if we're in Cloudflare environment with service bindings
+  return typeof globalThis !== "undefined" && "getRequestContext" in globalThis
 }

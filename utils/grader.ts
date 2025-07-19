@@ -1,6 +1,6 @@
 import type { ExamData, UserBio } from "@/app/page"
 import type { Question } from "@/app/utils/csv-parser"
-import { getWorkerConfig } from "@/lib/config"
+import { getWorkerUrl, isServiceBound } from "@/lib/config"
 
 export interface GradingResult {
   overallScore: number
@@ -22,17 +22,48 @@ export interface GradingResult {
   confidence: number
 }
 
-const WORKER_URL = getWorkerConfig().workerUrl
-
 export async function gradeExam(
   examData: ExamData,
   userBio: UserBio,
   questions: Question[],
 ): Promise<GradingResult | null> {
   try {
-    console.log("Sending exam data to Grok AI Worker...")
+    console.log("Starting AI grading with xAI Grok...")
 
-    const response = await fetch(WORKER_URL, {
+    // Check if we can use service binding (more efficient in Cloudflare)
+    if (isServiceBound()) {
+      try {
+        const { getRequestContext } = await import("@cloudflare/next-on-pages")
+        const { env } = getRequestContext()
+
+        if (env.AI_GRADER) {
+          console.log("Using service binding for AI grader")
+          const response = await env.AI_GRADER.fetch("/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              exam_data: examData,
+              user_bio: userBio,
+              questions,
+            }),
+          })
+
+          if (response.ok) {
+            const result = await response.json()
+            console.log("Grok AI grading completed via service binding")
+            return result as GradingResult
+          }
+        }
+      } catch (error) {
+        console.log("Service binding not available, falling back to HTTP")
+      }
+    }
+
+    // Fallback to HTTP request
+    const workerUrl = getWorkerUrl()
+    console.log("Using HTTP request to AI grader:", workerUrl)
+
+    const response = await fetch(workerUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

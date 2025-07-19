@@ -140,7 +140,7 @@ export default function App() {
         questions,
       }
 
-      console.log("Starting AI grading with xAI Grok...")
+      console.log("Starting AI grading with xAI Grok via Cloudflare Worker...")
 
       // Use modular grading system with Grok
       let gradingResult: GradingResult | null = await gradeExam(finalExamData, appState.userBio, questions)
