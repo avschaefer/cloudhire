@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@cloudflare/workers-types':
-        specifier: latest
-        version: 4.20250719.0
       '@google/generative-ai':
         specifier: latest
         version: 0.24.1
@@ -161,9 +158,6 @@ importers:
       vaul:
         specifier: latest
         version: 1.1.2(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
-      vercel:
-        specifier: latest
-        version: 44.5.0
       zod:
         specifier: ^3.24.1
         version: 3.24.1
@@ -3364,7 +3358,8 @@ snapshots:
       mime: 3.0.0
       zod: 3.24.1
 
-  '@cloudflare/workers-types@4.20250719.0': {}
+  '@cloudflare/workers-types@4.20250719.0':
+    optional: true
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:

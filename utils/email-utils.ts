@@ -1,7 +1,15 @@
 import { Resend } from "resend"
-import { getEmailConfig } from "@/lib/config"
+import { getResendFromEmail, getHiringManagerEmail } from "@/lib/config"
 
-export function getResendClient(): Resend {
+export interface EmailMetadata {
+  to: string
+  subject: string
+  htmlContent: string
+  emailId?: string
+  sentAt: Date
+}
+
+export function getResendClient() {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) {
     throw new Error("RESEND_API_KEY not configured")
@@ -9,25 +17,9 @@ export function getResendClient(): Resend {
   return new Resend(apiKey)
 }
 
-export function getFromEmail(): string {
-  return getEmailConfig().fromEmail
-}
-
-export function getHiringManagerEmail(): string {
-  return getEmailConfig().hiringManagerEmail
-}
-
-export function prepareEmailData(
-  to: string,
-  subject: string,
-  htmlContent: string,
-  attachments?: Array<{
-    filename: string
-    content: string
-  }>,
-) {
+export function prepareEmailData(to: string, subject: string, htmlContent: string, attachments?: any[]) {
   return {
-    from: getFromEmail(),
+    from: getResendFromEmail(),
     to: [to],
     subject,
     html: htmlContent,
@@ -38,10 +30,17 @@ export function prepareEmailData(
   }
 }
 
-export function generateEmailSubject(candidateName: string, position: string): string {
-  return `Technical Assessment Results - ${candidateName} (${position})`
-}
+export { getHiringManagerEmail }
 
-export function generateEmailPreview(overallScore: number, recommendation: string): string {
-  return `Assessment completed with ${overallScore}% overall score. Recommendation: ${recommendation}`
+// Function for downloading HTML reports (fixes the import error)
+export function downloadHTMLReport(htmlContent: string, filename = "exam-report.html") {
+  const blob = new Blob([htmlContent], { type: "text/html" })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement("a")
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
 }

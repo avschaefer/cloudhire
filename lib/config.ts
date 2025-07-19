@@ -1,99 +1,50 @@
 import type { ExamData, UserBio } from "@/app/page"
 import type { Question } from "@/app/utils/csv-parser"
 
-// Modular configuration functions to avoid hardcoding
+// Configuration functions to avoid hardcoding values
+export function getAiGradingPrompt(examData: ExamData, userBio: UserBio, questions: Question[]) {
+  return `
+    Evaluate this technical hiring exam for position: ${userBio.position || "Unknown"}.
+    
+    Candidate: ${userBio.firstName || ""} ${userBio.lastName || ""}
+    Experience: ${userBio.experience || "Not specified"}
+    Education: ${userBio.education || "Not specified"}
+    
+    Questions and Answers:
+    ${JSON.stringify({ questions, answers: examData }, null, 2)}
+    
+    Please provide a JSON response with:
+    - score: integer (0-100) representing overall performance
+    - feedback: string with detailed overall assessment
+    - details: object with per-question analysis and scores
+    - strengths: array of identified strengths
+    - improvements: array of areas for improvement
+    
+    Be objective, technical, and provide insights valuable for hiring decisions.
+    Focus on technical competency, problem-solving approach, and depth of understanding.
+  `
+}
 
 export function getWorkerUrl(): string {
   return process.env.AI_GRADER_WORKER_URL || "https://ai-grader-worker.youraccount.workers.dev/"
 }
 
 export function getSiteUrl(): string {
-  return process.env.NEXT_PUBLIC_SITE_URL || "https://cloudhire.app"
+  return process.env.SITE_URL || "https://cloudhire.app"
 }
 
-export function getDbBinding(): string {
-  return "DB" // D1 binding name from wrangler.toml
+export function getHiringManagerEmail(): string {
+  return process.env.RESEND_TO_EMAIL || "hiring@company.com"
 }
 
-export function getGrokGradingPrompt(examData: ExamData, userBio: UserBio, questions: Question[]) {
-  return `
-You are an expert technical evaluator for engineering positions. Please evaluate this technical exam submission.
-
-CANDIDATE INFORMATION:
-- Name: ${userBio.firstName} ${userBio.lastName}
-- Position: ${userBio.position}
-- Experience: ${userBio.experience}
-- Education: ${userBio.education}
-
-EXAM QUESTIONS AND ANSWERS:
-${questions
-  .map((q, index) => {
-    let answer = ""
-    if (q.type === "multipleChoice") {
-      answer = examData.multipleChoice[q.ID] || "No answer provided"
-    } else if (q.type === "concepts") {
-      answer = examData.concepts[q.ID] || "No answer provided"
-    } else if (q.type === "calculations") {
-      const numericalAnswer = examData.calculations[`${q.ID}-answer`] || "No numerical answer"
-      const explanation = examData.calculations[`${q.ID}-explanation`] || "No explanation provided"
-      answer = `Numerical Answer: ${numericalAnswer}\nExplanation: ${explanation}`
-    }
-
-    return `
-Question ${index + 1} (${q.type}, ${q.difficulty || "Unknown"} difficulty):
-${q.question}
-${q.options ? `Options: ${q.options.join(", ")}` : ""}
-${q.answer ? `Correct Answer: ${q.answer}` : ""}
-
-Candidate's Answer:
-${answer}
-`
-  })
-  .join("\n---\n")}
-
-Please provide a comprehensive evaluation in the following JSON format:
-{
-  "overallScore": number (0-100),
-  "sectionScores": {
-    "multipleChoice": number (0-100),
-    "concepts": number (0-100),
-    "calculations": number (0-100)
-  },
-  "feedback": "Overall assessment and recommendations",
-  "strengths": ["List of candidate strengths"],
-  "improvements": ["Areas for improvement"],
-  "questionScores": [
-    {
-      "questionId": "string",
-      "score": number (0-100),
-      "feedback": "Specific feedback for this question",
-      "partialCredit": boolean
-    }
-  ],
-  "recommendation": "HIRE" | "CONSIDER" | "REJECT",
-  "confidence": number (0-100)
+export function getResendFromEmail(): string {
+  return process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev"
 }
 
-Focus on technical accuracy, problem-solving approach, and communication clarity. For calculation questions, award partial credit for correct methodology even if the final answer is wrong.
-`
+export function getGrokModel(): string {
+  return process.env.GROK_MODEL || "grok-3"
 }
 
-export function getGrokModelConfig() {
-  return {
-    model: "grok-3",
-    temperature: 0.1,
-    max_tokens: 4000,
-  }
-}
-
-export function getEmailConfig() {
-  return {
-    fromEmail: process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev",
-    hiringManagerEmail: process.env.NEXT_PUBLIC_HIRING_MANAGER_EMAIL || "hiring@cloudhire.app",
-  }
-}
-
-export function isServiceBound(): boolean {
-  // Check if we're in Cloudflare environment with service bindings
-  return typeof globalThis !== "undefined" && "getRequestContext" in globalThis
+export function getGrokTemperature(): number {
+  return Number.parseFloat(process.env.GROK_TEMPERATURE || "0.7")
 }

@@ -11,7 +11,6 @@
     "start": "next start"
   },
   "dependencies": {
-    "@cloudflare/workers-types": "latest",
     "@google/generative-ai": "latest",
     "@hookform/resolvers": "^3.9.1",
     "@radix-ui/react-accordion": "latest",
@@ -62,7 +61,6 @@
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "latest",
-    "vercel": "latest",
     "zod": "^3.24.1"
   },
   "devDependencies": {

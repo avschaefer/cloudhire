@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getResendClient, prepareEmailData, getHiringManagerEmail } from "@/utils/email-utils"
-import { saveReportToD1, type ReportData } from "@/lib/d1"
+
+// Configure for Edge Runtime (required for Cloudflare Pages)
+export const runtime = "edge"
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,14 +33,8 @@ export async function POST(request: NextRequest) {
 
     console.log("Email sent successfully with ID:", data?.id)
 
-    // Store report in D1 if report data provided
-    if (reportData) {
-      const reportWithEmailId: ReportData = {
-        ...reportData,
-        emailId: data?.id,
-      }
-      await saveReportToD1(reportWithEmailId)
-    }
+    // Note: D1 integration will be added after Pages setup is complete
+    // For now, we'll skip the database save to get the build working
 
     return NextResponse.json({
       success: true,

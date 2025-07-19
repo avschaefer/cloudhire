@@ -2,11 +2,12 @@ name = "cloudhire"
 compatibility_date = "2025-07-19"
 pages_build_output_dir = ".next"
 
-[[d1_databases]]
-binding = "DB"
-database_name = "exam-db"
-database_id = "your-d1-id"  # Update this after D1 creation
+# This is for Pages deployment
+[env.production]
+name = "cloudhire-production"
 
-[vars]
-AI_GRADER_WORKER_URL = "https://ai-grader-worker.youraccount.workers.dev/"  # Update after Worker deployment
-NEXT_PUBLIC_SITE_URL = "https://cloudhire.app"  # For client-side usage
+[env.development] 
+name = "cloudhire-development"
+
+# D1 database configuration will be set in Cloudflare Pages dashboard
+# Environment variables will be set in Pages dashboard

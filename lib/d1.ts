@@ -1,158 +1,71 @@
-import type { GradingResult } from "@/utils/grader"
-import { getDbBinding, isServiceBound } from "@/lib/config"
+// D1 database integration for Cloudflare
+// This will be enabled after D1 database is set up
 
 export interface ReportData {
   submissionId: string
   candidateName: string
+  candidateEmail: string
   position: string
   examData: any
-  gradingResult: GradingResult
-  submittedAt: Date
+  gradingResult?: any
   emailId?: string
 }
 
-export async function saveReportToD1(reportData: ReportData): Promise<void> {
+export async function saveReportToD1(reportData: ReportData) {
   try {
-    if (!isServiceBound()) {
-      console.log("D1 not available in current environment - skipping database save")
-      return
-    }
+    // This will be enabled once D1 is configured
+    console.log("D1 save would store:", reportData.submissionId)
 
-    const { getRequestContext } = await import("@cloudflare/next-on-pages")
+    /* 
+    // Enable this after D1 binding is configured:
+    const { getRequestContext } = await import('@cloudflare/next-on-pages')
     const { env } = getRequestContext()
-    const dbBinding = getDbBinding()
-
-    const stmt = env[dbBinding]
-      .prepare(`
-      INSERT INTO exam_reports (
-        submission_id, 
-        candidate_name, 
-        position, 
-        overall_score,
-        recommendation,
-        data, 
-        email_id,
-        created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `)
-      .bind(
-        reportData.submissionId,
-        reportData.candidateName,
-        reportData.position,
-        reportData.gradingResult.overallScore,
-        reportData.gradingResult.recommendation,
-        JSON.stringify(reportData),
-        reportData.emailId || null,
-        new Date().toISOString(),
-      )
-
+    
+    const stmt = env.DB.prepare(`
+      INSERT INTO exam_reports 
+      (submission_id, candidate_name, candidate_email, position, exam_data, grading_result, email_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      reportData.submissionId,
+      reportData.candidateName,
+      reportData.candidateEmail,
+      reportData.position,
+      JSON.stringify(reportData.examData),
+      JSON.stringify(reportData.gradingResult),
+      reportData.emailId
+    )
+    
     await stmt.run()
-    console.log("Report saved to D1 database:", reportData.submissionId)
+    */
   } catch (error) {
-    console.error("Failed to save report to D1:", error)
+    console.error("D1 save error:", error)
   }
 }
 
-export async function getReportById(id: string): Promise<ReportData | null> {
+export async function getReportById(id: string) {
   try {
-    if (!isServiceBound()) {
-      console.log("D1 not available in current environment")
-      return null
-    }
-
-    const { getRequestContext } = await import("@cloudflare/next-on-pages")
-    const { env } = getRequestContext()
-    const dbBinding = getDbBinding()
-
-    const result = await env[dbBinding]
-      .prepare("SELECT data FROM exam_reports WHERE submission_id = ?")
-      .bind(id)
-      .first()
-
-    return result ? JSON.parse(result.data as string) : null
-  } catch (error) {
-    console.error("Failed to get report from D1:", error)
+    console.log("D1 get would fetch:", id)
     return null
-  }
-}
 
-export async function getAllReports(): Promise<
-  Array<{
-    id: number
-    submission_id: string
-    candidate_name: string
-    position: string
-    overall_score: number
-    recommendation: string
-    created_at: string
-  }>
-> {
-  try {
-    if (!isServiceBound()) {
-      console.log("D1 not available in current environment")
-      return []
-    }
-
-    const { getRequestContext } = await import("@cloudflare/next-on-pages")
+    /* 
+    // Enable this after D1 binding is configured:
+    const { getRequestContext } = await import('@cloudflare/next-on-pages')
     const { env } = getRequestContext()
-    const dbBinding = getDbBinding()
-
-    const results = await env[dbBinding]
-      .prepare(`
-        SELECT 
-          id, 
-          submission_id, 
-          candidate_name, 
-          position, 
-          overall_score,
-          recommendation,
-          created_at 
-        FROM exam_reports 
-        ORDER BY created_at DESC
-      `)
-      .all()
-
-    return results.results || []
-  } catch (error) {
-    console.error("Failed to get reports from D1:", error)
-    return []
-  }
-}
-
-export async function getReportStats(): Promise<{
-  totalReports: number
-  averageScore: number
-  recommendationCounts: { [key: string]: number }
-}> {
-  try {
-    if (!isServiceBound()) {
-      return { totalReports: 0, averageScore: 0, recommendationCounts: {} }
+    
+    const result = await env.DB.prepare(
+      'SELECT * FROM exam_reports WHERE submission_id = ?'
+    ).bind(id).first()
+    
+    if (result) {
+      return {
+        ...result,
+        examData: JSON.parse(result.exam_data as string),
+        gradingResult: result.grading_result ? JSON.parse(result.grading_result as string) : null
+      }
     }
-
-    const { getRequestContext } = await import("@cloudflare/next-on-pages")
-    const { env } = getRequestContext()
-    const dbBinding = getDbBinding()
-
-    const [countResult, avgResult, recResult] = await Promise.all([
-      env[dbBinding].prepare("SELECT COUNT(*) as count FROM exam_reports").first(),
-      env[dbBinding].prepare("SELECT AVG(overall_score) as avg FROM exam_reports").first(),
-      env[dbBinding]
-        .prepare("SELECT recommendation, COUNT(*) as count FROM exam_reports GROUP BY recommendation")
-        .all(),
-    ])
-
-    const recommendationCounts: { [key: string]: number } = {}
-    recResult.results?.forEach((row: any) => {
-      recommendationCounts[row.recommendation] = row.count
-    })
-
-    return {
-      totalReports: countResult?.count || 0,
-      averageScore: Math.round(avgResult?.avg || 0),
-      recommendationCounts,
-    }
+    */
   } catch (error) {
-    console.error("Failed to get report stats from D1:", error)
-    return { totalReports: 0, averageScore: 0, recommendationCounts: {} }
+    console.error("D1 get error:", error)
   }
+  return null
 }
