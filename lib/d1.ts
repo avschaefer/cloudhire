@@ -1,147 +1,113 @@
-import { getD1Database } from "@/lib/config"
-import type { ExamResult } from "@/utils/grader"
-import type { CandidateInfo, ExamSession } from "@/app/utils/email-service"
+// D1 Database utilities for Cloudflare
+export interface D1Database {
+  prepare(query: string): D1PreparedStatement
+  dump(): Promise<ArrayBuffer>
+  batch(statements: D1PreparedStatement[]): Promise<D1Result[]>
+  exec(query: string): Promise<D1ExecResult>
+}
 
-export interface ExamRecord {
-  id: string
-  candidate_name: string
-  candidate_email: string
-  position: string
-  company?: string
-  session_id: string
-  start_time: string
-  end_time: string
+export interface D1PreparedStatement {
+  bind(...values: any[]): D1PreparedStatement
+  first(): Promise<any>
+  run(): Promise<D1Result>
+  all(): Promise<D1Result>
+}
+
+export interface D1Result {
+  results?: any[]
+  success: boolean
+  error?: string
+  meta: {
+    duration: number
+    size_after: number
+    rows_read: number
+    rows_written: number
+  }
+}
+
+export interface D1ExecResult {
+  count: number
   duration: number
-  total_score: number
-  max_score: number
-  percentage: number
-  results: string // JSON string
-  overall_feedback: string
-  created_at: string
 }
 
-// Save exam result to D1 database
-export const saveExamResult = async (
-  candidate: CandidateInfo,
-  session: ExamSession,
-  result: ExamResult,
-): Promise<{ success: boolean; error?: string }> => {
-  try {
-    const db = getD1Database()
+// Database operations
+export class ExamDatabase {
+  constructor(private db: D1Database) {}
 
-    if (!db) {
-      console.log("D1 database not available, skipping save")
-      return { success: false, error: "Database not configured" }
-    }
+  async saveExamResult(examResult: any): Promise<boolean> {
+    try {
+      const stmt = this.db.prepare(`
+        INSERT INTO exam_results (
+          user_name, user_email, position, total_score, max_score, 
+          completed_at, time_spent, answers_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `)
 
-    const record: Omit<ExamRecord, "id" | "created_at"> = {
-      candidate_name: candidate.name,
-      candidate_email: candidate.email,
-      position: candidate.position,
-      company: candidate.company,
-      session_id: session.sessionId,
-      start_time: session.startTime.toISOString(),
-      end_time: session.endTime.toISOString(),
-      duration: session.duration,
-      total_score: result.totalScore,
-      max_score: result.maxScore,
-      percentage: result.percentage,
-      results: JSON.stringify(result.results),
-      overall_feedback: result.overallFeedback,
-    }
+      const result = await stmt
+        .bind(
+          examResult.userInfo.name,
+          examResult.userInfo.email,
+          examResult.userInfo.position,
+          examResult.totalScore,
+          examResult.maxScore,
+          examResult.completedAt,
+          examResult.timeSpent,
+          JSON.stringify(examResult.answers),
+        )
+        .run()
 
-    const stmt = db.prepare(`
-      INSERT INTO exam_results (
-        candidate_name, candidate_email, position, company, session_id,
-        start_time, end_time, duration, total_score, max_score, percentage,
-        results, overall_feedback, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
-    `)
-
-    await stmt
-      .bind(
-        record.candidate_name,
-        record.candidate_email,
-        record.position,
-        record.company,
-        record.session_id,
-        record.start_time,
-        record.end_time,
-        record.duration,
-        record.total_score,
-        record.max_score,
-        record.percentage,
-        record.results,
-        record.overall_feedback,
-      )
-      .run()
-
-    return { success: true }
-  } catch (error) {
-    console.error("Error saving exam result to D1:", error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Database error",
+      return result.success
+    } catch (error) {
+      console.error("Error saving exam result:", error)
+      return false
     }
   }
-}
 
-// Get exam results by session ID
-export const getExamResult = async (sessionId: string): Promise<ExamRecord | null> => {
-  try {
-    const db = getD1Database()
+  async getExamResults(limit = 50): Promise<any[]> {
+    try {
+      const stmt = this.db.prepare(`
+        SELECT * FROM exam_results 
+        ORDER BY completed_at DESC 
+        LIMIT ?
+      `)
 
-    if (!db) {
-      return null
-    }
-
-    const stmt = db.prepare("SELECT * FROM exam_results WHERE session_id = ?")
-    const result = await stmt.bind(sessionId).first()
-
-    return result as ExamRecord | null
-  } catch (error) {
-    console.error("Error getting exam result from D1:", error)
-    return null
-  }
-}
-
-// Get all exam results (for admin view)
-export const getAllExamResults = async (): Promise<ExamRecord[]> => {
-  try {
-    const db = getD1Database()
-
-    if (!db) {
+      const result = await stmt.bind(limit).all()
+      return result.results || []
+    } catch (error) {
+      console.error("Error fetching exam results:", error)
       return []
     }
+  }
 
-    const stmt = db.prepare("SELECT * FROM exam_results ORDER BY created_at DESC")
-    const results = await stmt.all()
+  async getExamResultByEmail(email: string): Promise<any | null> {
+    try {
+      const stmt = this.db.prepare(`
+        SELECT * FROM exam_results 
+        WHERE user_email = ? 
+        ORDER BY completed_at DESC 
+        LIMIT 1
+      `)
 
-    return results.results as ExamRecord[]
-  } catch (error) {
-    console.error("Error getting all exam results from D1:", error)
-    return []
+      const result = await stmt.bind(email).first()
+      return result || null
+    } catch (error) {
+      console.error("Error fetching exam result:", error)
+      return null
+    }
   }
 }
 
-// Delete exam result
-export const deleteExamResult = async (sessionId: string): Promise<{ success: boolean; error?: string }> => {
-  try {
-    const db = getD1Database()
-
-    if (!db) {
-      return { success: false, error: "Database not configured" }
-    }
-
-    const stmt = db.prepare("DELETE FROM exam_results WHERE session_id = ?")
-    await stmt.bind(sessionId).run()
-
-    return { success: true }
-  } catch (error) {
-    console.error("Error deleting exam result from D1:", error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Database error",
-    }
+// Helper function to get database instance
+export function getDatabase(): D1Database | null {
+  // This will be available in Cloudflare Workers environment
+  if (typeof globalThis !== "undefined" && "DB" in globalThis) {
+    return (globalThis as any).DB
   }
+  return null
+}
+
+// Helper function to create database instance
+export function createExamDatabase(): ExamDatabase | null {
+  const db = getDatabase()
+  return db ? new ExamDatabase(db) : null
 }

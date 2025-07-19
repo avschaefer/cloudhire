@@ -1,205 +1,152 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
-import WelcomePage from "./components/welcome-page"
-import BioPage from "./components/bio-page"
-import ExamPage from "./components/exam-page"
-import SubmissionPage from "./components/submission-page"
-import ProgressTracker from "./components/progress-tracker"
-import { fetchAndParseQuestionsCsv, getInitialExamData, type Question } from "./utils/csv-parser"
-import { gradeExam, getFallbackGrading, type GradingResult } from "@/utils/grader"
-import { generateEnhancedHTMLReport } from "./utils/enhanced-report-generator"
-import { sendReportEmail } from "./utils/email-service"
+import { WelcomePage } from "./components/welcome-page"
+import { BioPage } from "./components/bio-page"
+import { ExamPage } from "./components/exam-page"
+import { SubmissionPage } from "./components/submission-page"
+import { parseCSV } from "./utils/csv-parser"
 
-export type Stage = "welcome" | "bio" | "exam" | "submission"
+export interface Question {
+  id: number
+  question: string
+  type: "multiple-choice" | "short-answer" | "essay"
+  options?: string[]
+  correctAnswer?: string
+  points: number
+  category: string
+}
 
-export interface UserBio {
-  firstName: string
-  lastName: string
+export interface UserInfo {
+  name: string
   email: string
-  phone: string
   position: string
   experience: string
-  education: string
-  linkedIn?: string
-  resume?: File
-  transcript?: File
+  motivation: string
 }
 
-export interface ExamData {
-  multipleChoice: { [key: string]: string }
-  concepts: { [key: string]: string }
-  calculations: { [key: string]: string }
+export interface Answer {
+  questionId: number
+  answer: string
+  timeSpent: number
 }
 
-export interface AppState {
-  currentStage: Stage
-  userBio: UserBio
-  examData: ExamData
-  examStartTime?: Date
-  examEndTime?: Date
-  totalTimeSpent: number
+export interface ExamResult {
+  userInfo: UserInfo
+  answers: Answer[]
+  totalScore: number
+  maxScore: number
+  completedAt: string
+  timeSpent: number
 }
 
-export default function App() {
-  const [appState, setAppState] = useState<AppState>({
-    currentStage: "welcome",
-    userBio: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      phone: "",
-      position: "",
-      experience: "",
-      education: "",
-      linkedIn: "",
-      resume: undefined,
-      transcript: undefined,
-    },
-    examData: {
-      multipleChoice: {},
-      concepts: {},
-      calculations: {},
-    },
-    totalTimeSpent: 0,
-  })
+type ExamStep = "welcome" | "bio" | "exam" | "submission"
+
+export default function ExamApp() {
+  const [currentStep, setCurrentStep] = useState<ExamStep>("welcome")
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null)
   const [questions, setQuestions] = useState<Question[]>([])
-  const [isLoadingQuestions, setIsLoadingQuestions] = useState(true)
-  const [questionError, setQuestionError] = useState<string | null>(null)
+  const [answers, setAnswers] = useState<Answer[]>([])
+  const [examResult, setExamResult] = useState<ExamResult | null>(null)
+  const [loading, setLoading] = useState(false)
 
+  // Load questions on component mount
   useEffect(() => {
-    const loadAppState = async () => {
+    const loadQuestions = async () => {
       try {
-        const fetchedQuestions = await fetchAndParseQuestionsCsv()
-        setQuestions(fetchedQuestions)
-        setIsLoadingQuestions(false)
-
-        const savedState = localStorage.getItem("examAppState")
-        if (savedState) {
-          const parsed = JSON.parse(savedState)
-          setAppState({
-            ...parsed,
-            examStartTime: parsed.examStartTime ? new Date(parsed.examStartTime) : undefined,
-            examEndTime: parsed.examEndTime ? new Date(parsed.examEndTime) : undefined,
-          })
-        } else {
-          setAppState((prev) => ({
-            ...prev,
-            examData: getInitialExamData(fetchedQuestions),
-          }))
-        }
+        const response = await fetch("/Questions.csv")
+        const csvText = await response.text()
+        const parsedQuestions = parseCSV(csvText)
+        setQuestions(parsedQuestions)
       } catch (error) {
-        console.error("Failed to load questions or app state:", error)
-        setQuestionError("Failed to load exam questions. Please try again later.")
-        setIsLoadingQuestions(false)
+        console.error("Error loading questions:", error)
+        // Fallback questions if CSV fails to load
+        const fallbackQuestions: Question[] = [
+          {
+            id: 1,
+            question: "What is your experience with cloud technologies?",
+            type: "essay",
+            points: 10,
+            category: "Technical",
+          },
+          {
+            id: 2,
+            question: "Which programming language do you prefer for backend development?",
+            type: "multiple-choice",
+            options: ["JavaScript/Node.js", "Python", "Java", "Go", "Other"],
+            points: 5,
+            category: "Technical",
+          },
+          {
+            id: 3,
+            question: "Describe a challenging project you've worked on recently.",
+            type: "essay",
+            points: 15,
+            category: "Experience",
+          },
+        ]
+        setQuestions(fallbackQuestions)
       }
     }
 
-    loadAppState()
+    loadQuestions()
   }, [])
 
-  useEffect(() => {
-    if (!isLoadingQuestions) {
-      localStorage.setItem("examAppState", JSON.stringify(appState))
+  const handleWelcomeComplete = () => {
+    setCurrentStep("bio")
+  }
+
+  const handleBioComplete = (info: UserInfo) => {
+    setUserInfo(info)
+    setCurrentStep("exam")
+  }
+
+  const handleExamComplete = async (examAnswers: Answer[], timeSpent: number) => {
+    if (!userInfo) return
+
+    setLoading(true)
+    setAnswers(examAnswers)
+
+    try {
+      // Calculate basic score (this will be enhanced with AI grading)
+      const totalScore = examAnswers.reduce((sum, answer) => {
+        const question = questions.find((q) => q.id === answer.questionId)
+        return sum + (question?.points || 0)
+      }, 0)
+
+      const maxScore = questions.reduce((sum, q) => sum + q.points, 0)
+
+      const result: ExamResult = {
+        userInfo,
+        answers: examAnswers,
+        totalScore,
+        maxScore,
+        completedAt: new Date().toISOString(),
+        timeSpent,
+      }
+
+      setExamResult(result)
+      setCurrentStep("submission")
+    } catch (error) {
+      console.error("Error processing exam:", error)
+    } finally {
+      setLoading(false)
     }
-  }, [appState, isLoadingQuestions])
-
-  const updateStage = (stage: Stage) => {
-    setAppState((prev) => ({ ...prev, currentStage: stage }))
   }
 
-  const updateUserBio = (bio: UserBio) => {
-    setAppState((prev) => ({ ...prev, userBio: bio }))
+  const handleBackToWelcome = () => {
+    setCurrentStep("welcome")
+    setUserInfo(null)
+    setAnswers([])
+    setExamResult(null)
   }
 
-  const updateExamData = (examData: ExamData) => {
-    setAppState((prev) => ({ ...prev, examData }))
-  }
-
-  const completeExam = async (finalExamData: ExamData, timeSpent: number) => {
-    const examEndTime = new Date()
-    setAppState((prev) => ({
-      ...prev,
-      currentStage: "submission",
-      examData: finalExamData,
-      examEndTime,
-      totalTimeSpent: timeSpent,
-    }))
-
-    setTimeout(async () => {
-      const submissionId = `EXAM_${Date.now()}`
-      const reportData = {
-        candidate: appState.userBio,
-        examData: finalExamData,
-        examStartTime: appState.examStartTime,
-        examEndTime,
-        totalTimeSpent: timeSpent,
-        submissionId,
-        submittedAt: new Date(),
-        questions,
-      }
-
-      console.log("Starting AI grading with xAI Grok via Cloudflare Worker...")
-
-      // Use modular grading system with Grok
-      let gradingResult: GradingResult | null = await gradeExam(finalExamData, appState.userBio, questions)
-
-      if (!gradingResult) {
-        console.log("Grok grading failed, using fallback grading")
-        gradingResult = getFallbackGrading(finalExamData, questions)
-      }
-
-      const enhancedReportData = {
-        ...reportData,
-        gradingResult,
-      }
-
-      const htmlReport = generateEnhancedHTMLReport(enhancedReportData)
-
-      // Send email with report data for D1 storage
-      const emailSent = await sendReportEmail(
-        htmlReport,
-        `${appState.userBio.firstName} ${appState.userBio.lastName}`,
-        appState.userBio.position,
-        {
-          submissionId,
-          candidateName: `${appState.userBio.firstName} ${appState.userBio.lastName}`,
-          position: appState.userBio.position,
-          examData: finalExamData,
-          gradingResult,
-          submittedAt: new Date(),
-        },
-      )
-
-      if (emailSent) {
-        console.log("AI-graded report successfully emailed to hiring manager")
-      } else {
-        console.error("Failed to email AI-graded report")
-      }
-
-      localStorage.setItem("latestExamReport", JSON.stringify(enhancedReportData))
-    }, 1000)
-  }
-
-  if (isLoadingQuestions) {
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mx-auto mb-4" />
-          <p className="text-lg text-gray-700">Loading exam questions...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (questionError) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center p-6 bg-white rounded-lg shadow-md">
-          <h2 className="text-xl font-bold text-red-600 mb-4">Error Loading Exam</h2>
-          <p className="text-gray-700 mb-6">{questionError}</p>
-          <Button onClick={() => window.location.reload()}>Retry</Button>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-lg">Processing your exam...</p>
         </div>
       </div>
     )
@@ -207,34 +154,17 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <ProgressTracker currentStage={appState.currentStage} />
-      <main>
-        {appState.currentStage === "welcome" && <WelcomePage onNext={() => updateStage("bio")} />}
+      {currentStep === "welcome" && <WelcomePage onComplete={handleWelcomeComplete} />}
 
-        {appState.currentStage === "bio" && (
-          <BioPage userBio={appState.userBio} onUpdateBio={updateUserBio} onNext={() => updateStage("exam")} />
-        )}
+      {currentStep === "bio" && <BioPage onComplete={handleBioComplete} />}
 
-        {appState.currentStage === "exam" && (
-          <ExamPage
-            initialExamData={appState.examData}
-            userBio={appState.userBio}
-            onComplete={completeExam}
-            examStartTime={appState.examStartTime}
-            questions={questions}
-          />
-        )}
+      {currentStep === "exam" && userInfo && (
+        <ExamPage questions={questions} userInfo={userInfo} onComplete={handleExamComplete} />
+      )}
 
-        {appState.currentStage === "submission" && (
-          <SubmissionPage
-            userBio={appState.userBio}
-            examData={appState.examData}
-            examStartTime={appState.examStartTime}
-            examEndTime={appState.examEndTime}
-            totalTimeSpent={appState.totalTimeSpent}
-          />
-        )}
-      </main>
+      {currentStep === "submission" && examResult && (
+        <SubmissionPage examResult={examResult} onBackToWelcome={handleBackToWelcome} />
+      )}
     </div>
   )
 }

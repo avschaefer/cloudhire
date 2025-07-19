@@ -23,7 +23,7 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
+    --radius: 0.75rem;
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
@@ -66,4 +66,69 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Custom styles for the exam interface */
+.exam-container {
+  @apply max-w-4xl mx-auto p-6;
+}
+
+.question-card {
+  @apply bg-white rounded-lg shadow-sm border p-6 mb-6;
+}
+
+.progress-bar {
+  @apply w-full bg-gray-200 rounded-full h-2;
+}
+
+.progress-fill {
+  @apply bg-blue-600 h-2 rounded-full transition-all duration-300;
+}
+
+.timer {
+  @apply bg-red-50 border border-red-200 rounded-lg p-3 text-red-800;
+}
+
+.answer-input {
+  @apply w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+}
+
+.multiple-choice-option {
+  @apply flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors;
+}
+
+.multiple-choice-option.selected {
+  @apply bg-blue-50 border-blue-300;
+}
+
+.navigation-buttons {
+  @apply flex justify-between items-center mt-8 pt-6 border-t;
+}
+
+.btn-primary {
+  @apply bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors;
+}
+
+.btn-secondary {
+  @apply bg-gray-200 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors;
+}
+
+.results-summary {
+  @apply bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 mb-6;
+}
+
+.score-display {
+  @apply text-3xl font-bold text-blue-600;
+}
+
+.feedback-section {
+  @apply bg-white rounded-lg shadow-sm border p-6 mb-4;
+}
+
+.strength-item {
+  @apply text-green-600 flex items-center mb-2;
+}
+
+.improvement-item {
+  @apply text-amber-600 flex items-center mb-2;
 }

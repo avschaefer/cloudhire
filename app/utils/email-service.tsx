@@ -1,189 +1,145 @@
-import { Resend } from "resend"
-import { getResendApiKey, getResendFromEmail } from "@/lib/config"
-import type { ExamResult } from "@/utils/grader"
+import type { ExamResult } from "../page"
+import type { DetailedExamResult } from "../../utils/grader"
 
-const resend = new Resend(getResendApiKey())
-
-export interface CandidateInfo {
-  name: string
-  email: string
-  position: string
-  company?: string
-}
-
-export interface ExamSession {
-  sessionId: string
-  startTime: Date
-  endTime: Date
-  duration: number // in minutes
-}
-
-export interface ReportData {
-  submissionId: string
-  candidateName: string
-  position: string
-  examData: any
-  gradingResult: any
-  submittedAt: Date
-}
-
-// Generate HTML report
-export const generateHTMLReport = (candidate: CandidateInfo, session: ExamSession, result: ExamResult): string => {
-  const siteUrl = "https://example.com" // Placeholder for getSiteUrl()
-
-  return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <title>Technical Exam Report - ${candidate.name}</title>
-      <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
-        .header { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px; }
-        .score-summary { background: #e3f2fd; padding: 20px; border-radius: 8px; margin-bottom: 30px; }
-        .question-result { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 5px; }
-        .score { font-weight: bold; color: #1976d2; }
-        .feedback { margin-top: 10px; font-style: italic; }
-        .category { background: #f5f5f5; padding: 2px 8px; border-radius: 3px; font-size: 0.9em; }
-        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 0.9em; color: #666; }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        <h1>Technical Exam Report</h1>
-        <p><strong>Candidate:</strong> ${candidate.name}</p>
-        <p><strong>Email:</strong> ${candidate.email}</p>
-        <p><strong>Position:</strong> ${candidate.position}</p>
-        ${candidate.company ? `<p><strong>Company:</strong> ${candidate.company}</p>` : ""}
-        <p><strong>Session ID:</strong> ${session.sessionId}</p>
-        <p><strong>Date:</strong> ${session.startTime.toLocaleDateString()}</p>
-        <p><strong>Duration:</strong> ${session.duration} minutes</p>
-      </div>
-
-      <div class="score-summary">
-        <h2>Overall Score</h2>
-        <p class="score">Score: ${result.totalScore}/${result.maxScore} (${result.percentage}%)</p>
-        <p>${result.overallFeedback}</p>
-      </div>
-
-      <h2>Question-by-Question Results</h2>
-      ${result.results
-        .map(
-          (questionResult) => `
-        <div class="question-result">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h3>Question ${questionResult.questionId}</h3>
-            <span class="category">${questionResult.category}</span>
-          </div>
-          <p class="score">Score: ${questionResult.score}/${questionResult.maxScore}</p>
-          <div class="feedback">${questionResult.feedback}</div>
-        </div>
-      `,
-        )
-        .join("")}
-
-      <div class="footer">
-        <p>This report was generated automatically by the CloudHire Technical Exam System.</p>
-        <p>For questions about this report, please contact your hiring manager.</p>
-        <p>Report generated on: ${new Date().toLocaleString()}</p>
-      </div>
-    </body>
-    </html>
-  `
-}
-
-// Download HTML report (for client-side use)
-export function downloadHTMLReport(htmlContent: string, filename: string): void {
-  const blob = new Blob([htmlContent], { type: "text/html" })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement("a")
-  a.href = url
-  a.download = filename
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
-}
-
-// Send report email
-export async function sendReportEmail(
-  htmlReport: string,
-  candidateName: string,
-  position: string,
-  reportData?: ReportData,
-): Promise<boolean> {
+export async function sendExamResults(examResult: ExamResult | DetailedExamResult): Promise<boolean> {
   try {
     const response = await fetch("/api/send-email", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        htmlReport,
-        candidateName,
-        position,
-        reportData,
-      }),
+      body: JSON.stringify(examResult),
     })
 
-    if (!response.ok) {
-      throw new Error(`Email API error: ${response.status}`)
-    }
-
-    const result = await response.json()
-    return result.success
+    return response.ok
   } catch (error) {
-    console.error("Failed to send email:", error)
+    console.error("Error sending email:", error)
     return false
   }
 }
 
-// Send confirmation email to candidate
-export const sendCandidateConfirmation = async (
-  candidate: CandidateInfo,
-  session: ExamSession,
-): Promise<{ success: boolean; error?: string }> => {
-  try {
-    const fromEmail = getResendFromEmail()
+export function generateHTMLReport(examResult: ExamResult | DetailedExamResult): string {
+  const { userInfo, answers, totalScore, maxScore, completedAt, timeSpent } = examResult
+  const percentage = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0
 
-    if (!getResendApiKey()) {
-      throw new Error("Resend API key not configured")
-    }
+  const isDetailed = "gradingResults" in examResult
 
-    const emailData = {
-      from: fromEmail,
-      to: [candidate.email],
-      subject: "Technical Exam Completed - Thank You",
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>Thank you for completing the technical exam!</h2>
-          <p>Dear ${candidate.name},</p>
-          <p>Thank you for taking the time to complete our technical exam for the <strong>${candidate.position}</strong> position.</p>
-          <p><strong>Exam Details:</strong></p>
-          <ul>
-            <li>Session ID: ${session.sessionId}</li>
-            <li>Completed on: ${session.startTime.toLocaleDateString()}</li>
-            <li>Duration: ${session.duration} minutes</li>
-          </ul>
-          <p>Your responses have been submitted successfully and are being reviewed by our team. We will be in touch with you soon regarding the next steps in the hiring process.</p>
-          <p>If you have any questions, please don't hesitate to reach out.</p>
-          <p>Best regards,<br>The Hiring Team</p>
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Exam Results - ${userInfo.name}</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .header { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .score { font-size: 24px; font-weight: bold; color: #28a745; }
+        .section { margin-bottom: 30px; }
+        .question { background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 15px; }
+        .answer { background: white; padding: 10px; border-left: 3px solid #007bff; margin-top: 10px; }
+        .feedback { background: #e9ecef; padding: 10px; border-radius: 5px; margin-top: 10px; }
+        .strengths { color: #28a745; }
+        .improvements { color: #ffc107; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #f8f9fa; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>Technical Exam Results</h1>
+        <p><strong>Candidate:</strong> ${userInfo.name}</p>
+        <p><strong>Email:</strong> ${userInfo.email}</p>
+        <p><strong>Position:</strong> ${userInfo.position}</p>
+        <p><strong>Completed:</strong> ${new Date(completedAt).toLocaleString()}</p>
+        <p><strong>Time Spent:</strong> ${Math.round(timeSpent / 60)} minutes</p>
+        <div class="score">Score: ${totalScore}/${maxScore} (${percentage}%)</div>
+      </div>
+
+      <div class="section">
+        <h2>Candidate Background</h2>
+        <p><strong>Experience:</strong> ${userInfo.experience}</p>
+        <p><strong>Motivation:</strong> ${userInfo.motivation}</p>
+      </div>
+
+      ${
+        isDetailed
+          ? `
+        <div class="section">
+          <h2>Overall Feedback</h2>
+          <p>${examResult.overallFeedback}</p>
         </div>
-      `,
-    }
 
-    const response = await resend.emails.send(emailData)
+        <div class="section">
+          <h2>Detailed Results</h2>
+          ${examResult.gradingResults
+            .map(
+              (result, index) => `
+            <div class="question">
+              <h3>Question ${result.questionId}</h3>
+              <p><strong>Score:</strong> ${result.score}/${result.maxScore}</p>
+              <div class="answer">
+                <strong>Answer:</strong> ${answers.find((a) => a.questionId === result.questionId)?.answer || "No answer provided"}
+              </div>
+              <div class="feedback">
+                <p><strong>Feedback:</strong> ${result.feedback}</p>
+                ${result.strengths.length > 0 ? `<p class="strengths"><strong>Strengths:</strong> ${result.strengths.join(", ")}</p>` : ""}
+                ${result.improvements.length > 0 ? `<p class="improvements"><strong>Areas for Improvement:</strong> ${result.improvements.join(", ")}</p>` : ""}
+              </div>
+            </div>
+          `,
+            )
+            .join("")}
+        </div>
+      `
+          : `
+        <div class="section">
+          <h2>Answers Summary</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Question</th>
+                <th>Answer</th>
+                <th>Time Spent</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${answers
+                .map(
+                  (answer, index) => `
+                <tr>
+                  <td>Question ${answer.questionId}</td>
+                  <td>${answer.answer.substring(0, 100)}${answer.answer.length > 100 ? "..." : ""}</td>
+                  <td>${Math.round(answer.timeSpent / 60)} min</td>
+                </tr>
+              `,
+                )
+                .join("")}
+            </tbody>
+          </table>
+        </div>
+      `
+      }
 
-    if (response.error) {
-      throw new Error(response.error.message)
-    }
+      <div class="section">
+        <p><em>This report was generated automatically by the CloudHire technical assessment system.</em></p>
+      </div>
+    </body>
+    </html>
+  `
+}
 
-    return { success: true }
-  } catch (error) {
-    console.error("Error sending candidate confirmation:", error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error occurred",
-    }
-  }
+export function downloadHTMLReport(examResult: ExamResult | DetailedExamResult): void {
+  const htmlContent = generateHTMLReport(examResult)
+  const blob = new Blob([htmlContent], { type: "text/html" })
+  const url = URL.createObjectURL(blob)
+
+  const link = document.createElement("a")
+  link.href = url
+  link.download = `exam-results-${examResult.userInfo.name.replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.html`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+
+  URL.revokeObjectURL(url)
 }

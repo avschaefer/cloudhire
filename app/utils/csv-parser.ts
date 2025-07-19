@@ -1,90 +1,100 @@
-export interface Question {
-  ID: number
-  question: string
-  type: string
-  category: string
-  difficulty: string
-  points: number
-  options?: string
-  answer?: string
-}
+import type { Question } from "../page"
 
 export function parseCSV(csvText: string): Question[] {
   const lines = csvText.trim().split("\n")
-  const headers = lines[0].split(",").map((h) => h.trim())
-
   const questions: Question[] = []
 
+  // Skip header row
   for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(",").map((v) => v.trim())
+    const line = lines[i].trim()
+    if (!line) continue
 
-    if (values.length >= headers.length) {
-      const question: Question = {
-        ID: Number.parseInt(values[0]) || i,
-        question: values[1] || "",
-        type: values[2] || "Open Ended",
-        category: values[3] || "General",
-        difficulty: values[4] || "Medium",
-        points: Number.parseInt(values[5]) || 10,
-        options: values[6] || undefined,
-        answer: values[7] || undefined,
+    try {
+      // Parse CSV line (handle quoted fields)
+      const fields = parseCSVLine(line)
+
+      if (fields.length >= 6) {
+        const question: Question = {
+          id: Number.parseInt(fields[0]) || i,
+          question: fields[1] || `Question ${i}`,
+          type: (fields[2] as Question["type"]) || "essay",
+          points: Number.parseInt(fields[3]) || 10,
+          category: fields[4] || "General",
+          options: fields[5] ? fields[5].split("|").filter((opt) => opt.trim()) : undefined,
+          correctAnswer: fields[6] || undefined,
+        }
+
+        questions.push(question)
       }
-
-      questions.push(question)
+    } catch (error) {
+      console.warn(`Error parsing CSV line ${i}:`, error)
     }
   }
 
-  return questions
+  return questions.length > 0 ? questions : getFallbackQuestions()
 }
 
-export async function fetchAndParseQuestionsCsv(): Promise<Question[]> {
-  try {
-    const response = await fetch("/Questions.csv")
-    if (!response.ok) {
-      throw new Error(`Failed to fetch CSV: ${response.status}`)
+function parseCSVLine(line: string): string[] {
+  const fields: string[] = []
+  let current = ""
+  let inQuotes = false
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i]
+
+    if (char === '"') {
+      inQuotes = !inQuotes
+    } else if (char === "," && !inQuotes) {
+      fields.push(current.trim())
+      current = ""
+    } else {
+      current += char
     }
-
-    const csvText = await response.text()
-    return parseCSV(csvText)
-  } catch (error) {
-    console.error("Error loading questions:", error)
-
-    // Fallback questions if CSV fails to load
-    return [
-      {
-        ID: 1,
-        question: "What is the difference between let, const, and var in JavaScript?",
-        type: "Open Ended",
-        category: "JavaScript",
-        difficulty: "Medium",
-        points: 15,
-      },
-      {
-        ID: 2,
-        question: "Which of the following is NOT a valid HTTP method?",
-        type: "Multiple Choice",
-        category: "Web Development",
-        difficulty: "Easy",
-        points: 10,
-        options: "GET, POST, DELETE, SEND",
-        answer: "SEND",
-      },
-      {
-        ID: 3,
-        question: "Calculate the time complexity of a binary search algorithm and explain your reasoning.",
-        type: "Calculation",
-        category: "Algorithms",
-        difficulty: "Hard",
-        points: 20,
-      },
-    ]
   }
+
+  fields.push(current.trim())
+  return fields
 }
 
-export function getInitialExamData(questions: Question[]) {
-  return {
-    multipleChoice: {},
-    concepts: {},
-    calculations: {},
-  }
+function getFallbackQuestions(): Question[] {
+  return [
+    {
+      id: 1,
+      question: "What is your experience with cloud technologies and platforms?",
+      type: "essay",
+      points: 15,
+      category: "Technical",
+    },
+    {
+      id: 2,
+      question: "Which programming language do you prefer for backend development?",
+      type: "multiple-choice",
+      options: ["JavaScript/Node.js", "Python", "Java", "Go", "C#", "Other"],
+      points: 5,
+      category: "Technical",
+    },
+    {
+      id: 3,
+      question:
+        "Describe a challenging technical project you've worked on recently. What was your role and how did you overcome the challenges?",
+      type: "essay",
+      points: 20,
+      category: "Experience",
+    },
+    {
+      id: 4,
+      question: "How do you approach debugging a complex issue in production?",
+      type: "essay",
+      points: 15,
+      category: "Problem Solving",
+    },
+    {
+      id: 5,
+      question: "What is your preferred approach to version control?",
+      type: "multiple-choice",
+      options: ["Git with feature branches", "Git with trunk-based development", "Centralized VCS", "Other"],
+      points: 5,
+      category: "Development Practices",
+    },
+  ]
 }

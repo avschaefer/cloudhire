@@ -9,9 +9,6 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  experimental: {
-    serverComponentsExternalPackages: ['recharts'],
-  },
   // Webpack optimizations for smaller bundles
   webpack: (config, { isServer }) => {
     // Reduce bundle size
