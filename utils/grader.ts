@@ -1,104 +1,114 @@
-import { getWorkerUrl } from "@/lib/config"
-import type { ExamData, UserBio } from "@/app/page"
-import type { Question } from "@/app/utils/csv-parser"
+import { getXaiConfig, getAiWorkerConfig } from "@/lib/config"
 
-export interface GradingResult {
-  score: number
-  feedback: string
-  details: Record<string, any>
-  strengths?: string[]
-  improvements?: string[]
+export interface Question {
+  ID: number
+  Question: string
+  Type: string
+  Category: string
+  Difficulty: string
+  Points: number
 }
 
-export async function gradeExam(examData: ExamData, userBio: UserBio, questions: Question[]): Promise<GradingResult> {
-  try {
-    const workerUrl = getWorkerUrl()
+export interface Answer {
+  questionId: number
+  answer: string
+  timeSpent: number
+}
 
-    // For now, we'll use a fallback since the Worker isn't deployed yet
-    // This will be replaced with the actual Worker call once it's set up
-    console.log("AI grading would call:", workerUrl)
+export interface GradingResult {
+  questionId: number
+  score: number
+  maxScore: number
+  feedback: string
+  category: string
+}
 
-    // Temporary fallback until Worker is deployed
-    return getFallbackGrading(examData, questions)
+export interface ExamResult {
+  totalScore: number
+  maxScore: number
+  percentage: number
+  results: GradingResult[]
+  overallFeedback: string
+}
 
-    /* 
-    // This will be enabled once the Worker is deployed:
-    const response = await fetch(workerUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        exam_data: examData, 
-        user_bio: userBio, 
-        questions 
-      }),
-    })
-    
-    if (!response.ok) {
-      throw new Error(`Worker error: ${response.status}`)
+// Fallback grading function for when AI Worker is not available
+function fallbackGrading(questions: Question[], answers: Answer[]): ExamResult {
+  const results: GradingResult[] = answers.map((answer) => {
+    const question = questions.find((q) => q.ID === answer.questionId)
+    if (!question) {
+      return {
+        questionId: answer.questionId,
+        score: 0,
+        maxScore: 10,
+        feedback: "Question not found",
+        category: "Unknown",
+      }
     }
-    
-    return await response.json()
-    */
-  } catch (error) {
-    console.error("Grok grading failed:", error)
-    return getFallbackGrading(examData, questions)
+
+    // Simple scoring based on answer length and basic keywords
+    let score = 0
+    const maxScore = question.Points || 10
+
+    if (answer.answer.trim().length > 10) {
+      score = Math.min(maxScore * 0.7, maxScore) // Give 70% for substantial answers
+    }
+
+    return {
+      questionId: answer.questionId,
+      score,
+      maxScore,
+      feedback: `Basic evaluation: ${score > 0 ? "Good effort" : "Please provide more detail"}`,
+      category: question.Category || "General",
+    }
+  })
+
+  const totalScore = results.reduce((sum, result) => sum + result.score, 0)
+  const maxScore = results.reduce((sum, result) => sum + result.maxScore, 0)
+  const percentage = maxScore > 0 ? (totalScore / maxScore) * 100 : 0
+
+  return {
+    totalScore,
+    maxScore,
+    percentage,
+    results,
+    overallFeedback: `Exam completed with ${percentage.toFixed(1)}% score. AI grading is currently unavailable, using basic evaluation.`,
   }
 }
 
-export function getFallbackGrading(examData: ExamData, questions: Question[]): GradingResult {
-  let totalQuestions = 0
-  let answeredQuestions = 0
-  let score = 0
+export async function gradeExam(questions: Question[], answers: Answer[]): Promise<ExamResult> {
+  const aiWorkerConfig = getAiWorkerConfig()
+  const xaiConfig = getXaiConfig()
 
-  // Count questions and answers by type
-  const sections = ["multipleChoice", "concepts", "calculations"] as const
+  // If no AI configuration is available, use fallback
+  if (!xaiConfig.apiKey) {
+    console.warn("XAI API key not configured, using fallback grading")
+    return fallbackGrading(questions, answers)
+  }
 
-  sections.forEach((section) => {
-    const sectionQuestions = questions.filter((q) => {
-      const normalizedType = q.type.toLowerCase().replace(/\s+/g, "")
-      return (
-        (section === "multipleChoice" && normalizedType === "multiplechoice") ||
-        (section === "concepts" && normalizedType === "openended") ||
-        (section === "calculations" && normalizedType === "calculation")
-      )
+  try {
+    // Try to use AI Worker first
+    const response = await fetch(aiWorkerConfig.url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        questions,
+        answers,
+        apiKey: xaiConfig.apiKey,
+      }),
     })
 
-    totalQuestions += sectionQuestions.length
-
-    sectionQuestions.forEach((question) => {
-      const answer = examData[section]?.[question.ID]
-      if (answer && answer.trim()) {
-        answeredQuestions++
-        // Simple scoring: 10 points per answered question
-        score += 10
-      }
-    })
-  })
-
-  // Cap score at 100
-  score = Math.min(score, 100)
-
-  const completionRate = totalQuestions > 0 ? (answeredQuestions / totalQuestions) * 100 : 0
-
-  return {
-    score,
-    feedback: `Fallback evaluation completed. Answered ${answeredQuestions} out of ${totalQuestions} questions (${completionRate.toFixed(1)}% completion rate). This is a basic completeness check - full AI evaluation will be available once the grading system is fully deployed.`,
-    details: questions.reduce((acc, q) => {
-      const section = q.type.toLowerCase().includes("multiple")
-        ? "multipleChoice"
-        : q.type.toLowerCase().includes("open")
-          ? "concepts"
-          : "calculations"
-      const answer = examData[section]?.[q.ID]
-      return {
-        ...acc,
-        [q.ID]: {
-          answered: !!(answer && answer.trim()),
-          response: answer || "No answer provided",
-        },
-      }
-    }, {}),
-    strengths: answeredQuestions > 0 ? ["Completed the assessment", "Provided responses"] : [],
-    improvements: answeredQuestions < totalQuestions ? ["Complete all questions", "Provide more detailed answers"] : [],
+    if (response.ok) {
+      const result = await response.json()
+      return result as ExamResult
+    } else {
+      console.warn("AI Worker unavailable, using fallback grading")
+      return fallbackGrading(questions, answers)
+    }
+  } catch (error) {
+    console.error("Error calling AI Worker:", error)
+    console.warn("Falling back to basic grading")
+    return fallbackGrading(questions, answers)
   }
 }

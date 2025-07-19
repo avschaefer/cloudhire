@@ -1,174 +1,148 @@
-import { Resend } from "resend"
-import { getResendFromEmail, getHiringManagerEmail, getSiteUrl } from "@/lib/config"
-import type { ExamData, UserBio } from "@/app/page"
-import type { Question } from "@/app/utils/csv-parser"
-import type { GradingResult } from "@/utils/grader"
-
-const resend = new Resend(process.env.RESEND_API_KEY)
+import type { ExamResult } from "@/utils/grader"
+import { getSiteConfig } from "@/lib/config"
 
 export interface EmailReportData {
-  userBio: UserBio
-  examData: ExamData
-  questions: Question[]
-  gradingResult: GradingResult
-  submissionId: string
+  candidateName: string
+  candidateEmail: string
+  examResult: ExamResult
+  completionTime: string
+  sessionId: string
 }
 
-export async function sendEmailReport(reportData: EmailReportData) {
-  try {
-    const { userBio, examData, questions, gradingResult, submissionId } = reportData
-
-    const fromEmail = getResendFromEmail()
-    const hiringManagerEmail = getHiringManagerEmail()
-    const siteUrl = getSiteUrl()
-
-    // Generate HTML report
-    const htmlReport = generateHTMLReport(reportData)
-
-    // Send email with HTML report
-    const emailResult = await resend.emails.send({
-      from: fromEmail,
-      to: hiringManagerEmail,
-      subject: `Technical Exam Report - ${userBio.firstName} ${userBio.lastName}`,
-      html: htmlReport,
-      attachments: [
-        {
-          filename: `exam-report-${submissionId}.html`,
-          content: Buffer.from(htmlReport).toString("base64"),
-          type: "text/html",
-        },
-      ],
-    })
-
-    return {
-      success: true,
-      emailId: emailResult.data?.id,
-      reportUrl: `${siteUrl}/report?id=${submissionId}`,
-    }
-  } catch (error) {
-    console.error("Failed to send email report:", error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-    }
-  }
-}
-
-export function generateHTMLReport(reportData: EmailReportData): string {
-  const { userBio, examData, questions, gradingResult, submissionId } = reportData
+export function generateHTMLReport(data: EmailReportData): string {
+  const siteConfig = getSiteConfig()
 
   return `
     <!DOCTYPE html>
-    <html lang="en">
+    <html>
     <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Technical Exam Report</title>
+      <meta charset="utf-8">
+      <title>Technical Exam Report - ${data.candidateName}</title>
       <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
-        .header { background: #f4f4f4; padding: 20px; border-radius: 5px; margin-bottom: 20px; }
-        .score { font-size: 24px; font-weight: bold; color: ${gradingResult.score >= 70 ? "#28a745" : gradingResult.score >= 50 ? "#ffc107" : "#dc3545"}; }
-        .section { margin-bottom: 30px; }
-        .question { background: #f9f9f9; padding: 15px; margin-bottom: 15px; border-radius: 5px; }
-        .answer { background: white; padding: 10px; margin-top: 10px; border-left: 3px solid #007bff; }
-        .strengths { color: #28a745; }
-        .improvements { color: #dc3545; }
-        ul { padding-left: 20px; }
-        li { margin-bottom: 5px; }
+        .header { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .score-summary { background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .question-result { border: 1px solid #ddd; margin: 10px 0; padding: 15px; border-radius: 8px; }
+        .score-good { color: #2e7d32; font-weight: bold; }
+        .score-fair { color: #f57c00; font-weight: bold; }
+        .score-poor { color: #d32f2f; font-weight: bold; }
+        .category { background: #f5f5f5; padding: 5px 10px; border-radius: 4px; font-size: 0.9em; }
+        .feedback { background: #f9f9f9; padding: 10px; border-left: 4px solid #2196f3; margin-top: 10px; }
       </style>
     </head>
     <body>
       <div class="header">
         <h1>Technical Exam Report</h1>
-        <p><strong>Candidate:</strong> ${userBio.firstName} ${userBio.lastName}</p>
-        <p><strong>Email:</strong> ${userBio.email}</p>
-        <p><strong>Position:</strong> ${userBio.position}</p>
-        <p><strong>Experience:</strong> ${userBio.experience}</p>
-        <p><strong>Education:</strong> ${userBio.education}</p>
-        <p><strong>Submission ID:</strong> ${submissionId}</p>
-        <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+        <p><strong>Candidate:</strong> ${data.candidateName}</p>
+        <p><strong>Email:</strong> ${data.candidateEmail}</p>
+        <p><strong>Completion Time:</strong> ${data.completionTime}</p>
+        <p><strong>Session ID:</strong> ${data.sessionId}</p>
       </div>
 
-      <div class="section">
-        <h2>Overall Score</h2>
-        <div class="score">${gradingResult.score}/100</div>
+      <div class="score-summary">
+        <h2>Overall Performance</h2>
+        <p><strong>Total Score:</strong> ${data.examResult.totalScore} / ${data.examResult.maxScore}</p>
+        <p><strong>Percentage:</strong> ${data.examResult.percentage.toFixed(1)}%</p>
+        <p><strong>Grade:</strong> ${getGradeLetter(data.examResult.percentage)}</p>
       </div>
 
-      <div class="section">
-        <h2>Overall Feedback</h2>
-        <p>${gradingResult.feedback}</p>
+      <div class="feedback">
+        <h3>Overall Feedback</h3>
+        <p>${data.examResult.overallFeedback}</p>
       </div>
 
-      ${
-        gradingResult.strengths && gradingResult.strengths.length > 0
-          ? `
-      <div class="section">
-        <h2 class="strengths">Strengths</h2>
-        <ul>
-          ${gradingResult.strengths.map((strength) => `<li>${strength}</li>`).join("")}
-        </ul>
-      </div>
-      `
-          : ""
-      }
-
-      ${
-        gradingResult.improvements && gradingResult.improvements.length > 0
-          ? `
-      <div class="section">
-        <h2 class="improvements">Areas for Improvement</h2>
-        <ul>
-          ${gradingResult.improvements.map((improvement) => `<li>${improvement}</li>`).join("")}
-        </ul>
-      </div>
-      `
-          : ""
-      }
-
-      <div class="section">
-        <h2>Detailed Question Analysis</h2>
-        ${questions
-          .map((question, index) => {
-            const section = question.type.toLowerCase().includes("multiple")
-              ? "multipleChoice"
-              : question.type.toLowerCase().includes("open")
-                ? "concepts"
-                : "calculations"
-            const answer = examData[section]?.[question.ID] || "No answer provided"
-            const detail = gradingResult.details?.[question.ID]
-
-            return `
-            <div class="question">
-              <h3>Question ${index + 1}: ${question.type}</h3>
-              <p><strong>Question:</strong> ${question.question}</p>
-              ${question.options ? `<p><strong>Options:</strong> ${question.options}</p>` : ""}
-              <div class="answer">
-                <p><strong>Answer:</strong> ${answer}</p>
-                ${detail ? `<p><strong>Analysis:</strong> ${typeof detail === "object" ? JSON.stringify(detail) : detail}</p>` : ""}
-              </div>
+      <h2>Question-by-Question Results</h2>
+      ${data.examResult.results
+        .map(
+          (result) => `
+        <div class="question-result">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h3>Question ${result.questionId}</h3>
+            <div>
+              <span class="category">${result.category}</span>
+              <span class="${getScoreClass(result.score, result.maxScore)}" style="margin-left: 10px;">
+                ${result.score} / ${result.maxScore}
+              </span>
             </div>
-          `
-          })
-          .join("")}
-      </div>
+          </div>
+          <div class="feedback">
+            <strong>Feedback:</strong> ${result.feedback}
+          </div>
+        </div>
+      `,
+        )
+        .join("")}
 
-      <div class="section">
-        <p><em>This report was generated automatically by the Technical Exam System.</em></p>
+      <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+        <h3>Next Steps</h3>
+        <p>This report has been automatically generated and sent to the hiring team.</p>
+        <p>For questions about this assessment, please contact the hiring team.</p>
+        <p><a href="${siteConfig.url}/report-viewer?session=${data.sessionId}">View Interactive Report</a></p>
       </div>
     </body>
     </html>
   `
 }
 
-export function downloadHTMLReport(reportData: EmailReportData): void {
-  const htmlContent = generateHTMLReport(reportData)
+function getGradeLetter(percentage: number): string {
+  if (percentage >= 90) return "A (Excellent)"
+  if (percentage >= 80) return "B (Good)"
+  if (percentage >= 70) return "C (Satisfactory)"
+  if (percentage >= 60) return "D (Needs Improvement)"
+  return "F (Unsatisfactory)"
+}
+
+function getScoreClass(score: number, maxScore: number): string {
+  const percentage = (score / maxScore) * 100
+  if (percentage >= 80) return "score-good"
+  if (percentage >= 60) return "score-fair"
+  return "score-poor"
+}
+
+export async function sendExamReport(data: EmailReportData): Promise<boolean> {
+  try {
+    const reportHtml = generateHTMLReport(data)
+
+    const response = await fetch("/api/send-email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        candidateName: data.candidateName,
+        candidateEmail: data.candidateEmail,
+        reportHtml,
+        reportData: data.examResult,
+      }),
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      console.error("Failed to send email:", error)
+      return false
+    }
+
+    const result = await response.json()
+    console.log("Email sent successfully:", result)
+    return true
+  } catch (error) {
+    console.error("Error sending exam report:", error)
+    return false
+  }
+}
+
+// Export the downloadHTMLReport function that was missing
+export function downloadHTMLReport(data: EmailReportData): void {
+  const htmlContent = generateHTMLReport(data)
   const blob = new Blob([htmlContent], { type: "text/html" })
   const url = URL.createObjectURL(blob)
-  const a = document.createElement("a")
-  a.href = url
-  a.download = `exam-report-${reportData.submissionId}.html`
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
+
+  const link = document.createElement("a")
+  link.href = url
+  link.download = `exam-report-${data.candidateName.replace(/\s+/g, "-")}-${Date.now()}.html`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+
   URL.revokeObjectURL(url)
 }

@@ -1,30 +1,52 @@
+import { type NextRequest, NextResponse } from "next/server"
+import { Resend } from "resend"
+import { getResendConfig, getSiteConfig } from "@/lib/config"
+
 export const runtime = "edge"
 
-import { Resend } from "resend"
-import { type NextRequest, NextResponse } from "next/server"
-import { getResendFromEmail, getHiringManagerEmail } from "@/lib/config"
+const resendConfig = getResendConfig()
+const siteConfig = getSiteConfig()
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const resend = new Resend(resendConfig.apiKey)
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { to, subject, html, attachments } = body
+    const { candidateName, candidateEmail, reportHtml, reportData } = await request.json()
 
-    const fromEmail = getResendFromEmail()
-    const hiringManagerEmail = getHiringManagerEmail()
+    if (!resendConfig.apiKey) {
+      return NextResponse.json({ error: "Email service not configured" }, { status: 500 })
+    }
 
-    const data = await resend.emails.send({
-      from: fromEmail,
-      to: to || hiringManagerEmail,
-      subject: subject || "Technical Exam Report",
-      html: html || "<p>Technical exam report attached.</p>",
-      attachments: attachments || [],
+    // Send email to hiring manager
+    const emailResult = await resend.emails.send({
+      from: resendConfig.fromEmail,
+      to: resendConfig.toEmail,
+      subject: `Technical Exam Results - ${candidateName}`,
+      html: `
+        <h2>Technical Exam Results</h2>
+        <p><strong>Candidate:</strong> ${candidateName}</p>
+        <p><strong>Email:</strong> ${candidateEmail}</p>
+        <p><strong>Score:</strong> ${reportData.percentage.toFixed(1)}% (${reportData.totalScore}/${reportData.maxScore})</p>
+        
+        <h3>Detailed Report:</h3>
+        ${reportHtml}
+        
+        <p>View full report: <a href="${siteConfig.url}/report-viewer">Report Viewer</a></p>
+      `,
     })
 
-    return NextResponse.json({ success: true, data })
+    if (emailResult.error) {
+      console.error("Resend error:", emailResult.error)
+      return NextResponse.json({ error: "Failed to send email" }, { status: 500 })
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "Report sent successfully",
+      emailId: emailResult.data?.id,
+    })
   } catch (error) {
-    console.error("Email sending failed:", error)
-    return NextResponse.json({ success: false, error: "Failed to send email" }, { status: 500 })
+    console.error("Email API error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

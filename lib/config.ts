@@ -1,50 +1,29 @@
-import type { ExamData, UserBio } from "@/app/page"
-import type { Question } from "@/app/utils/csv-parser"
+// Configuration utilities for environment variables
+// Provides fallbacks and type safety for all environment variables
 
-// Configuration functions to avoid hardcoding values
-export function getAiGradingPrompt(examData: ExamData, userBio: UserBio, questions: Question[]) {
-  return `
-    Evaluate this technical hiring exam for position: ${userBio.position || "Unknown"}.
-    
-    Candidate: ${userBio.firstName || ""} ${userBio.lastName || ""}
-    Experience: ${userBio.experience || "Not specified"}
-    Education: ${userBio.education || "Not specified"}
-    
-    Questions and Answers:
-    ${JSON.stringify({ questions, answers: examData }, null, 2)}
-    
-    Please provide a JSON response with:
-    - score: integer (0-100) representing overall performance
-    - feedback: string with detailed overall assessment
-    - details: object with per-question analysis and scores
-    - strengths: array of identified strengths
-    - improvements: array of areas for improvement
-    
-    Be objective, technical, and provide insights valuable for hiring decisions.
-    Focus on technical competency, problem-solving approach, and depth of understanding.
-  `
-}
+export const getResendConfig = () => ({
+  apiKey: process.env.RESEND_API_KEY || "",
+  fromEmail: process.env.RESEND_FROM_EMAIL || "noreply@example.com",
+  toEmail: process.env.RESEND_TO_EMAIL || "admin@example.com",
+})
 
-export function getWorkerUrl(): string {
-  return process.env.AI_GRADER_WORKER_URL || "https://ai-grader-worker.youraccount.workers.dev/"
-}
+export const getXaiConfig = () => ({
+  apiKey: process.env.XAI_API_KEY || "",
+})
 
-export function getSiteUrl(): string {
-  return process.env.SITE_URL || "https://cloudhire.app"
-}
+export const getSiteConfig = () => ({
+  url: process.env.SITE_URL || "http://localhost:3000",
+})
 
-export function getHiringManagerEmail(): string {
-  return process.env.RESEND_TO_EMAIL || "hiring@company.com"
-}
+export const getAiWorkerConfig = () => ({
+  url: process.env.AI_GRADER_WORKER_URL || "https://fallback-worker.example.com",
+})
 
-export function getResendFromEmail(): string {
-  return process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev"
-}
+export const isDevelopment = () => process.env.NODE_ENV === "development"
+export const isProduction = () => process.env.NODE_ENV === "production"
 
-export function getGrokModel(): string {
-  return process.env.GROK_MODEL || "grok-3"
-}
-
-export function getGrokTemperature(): number {
-  return Number.parseFloat(process.env.GROK_TEMPERATURE || "0.7")
-}
+// Database configuration
+export const getDbConfig = () => ({
+  // D1 binding will be available in Cloudflare environment
+  binding: "DB",
+})
