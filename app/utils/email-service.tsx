@@ -18,6 +18,15 @@ export interface ExamSession {
   duration: number // in minutes
 }
 
+export interface ReportData {
+  submissionId: string
+  candidateName: string
+  position: string
+  examData: any
+  gradingResult: any
+  submittedAt: Date
+}
+
 // Generate HTML report
 export const generateHTMLReport = (candidate: CandidateInfo, session: ExamSession, result: ExamResult): string => {
   const siteUrl = "https://example.com" // Placeholder for getSiteUrl()
@@ -85,8 +94,6 @@ export const generateHTMLReport = (candidate: CandidateInfo, session: ExamSessio
 
 // Download HTML report (for client-side use)
 export function downloadHTMLReport(htmlContent: string, filename: string): void {
-  if (typeof window === "undefined") return
-
   const blob = new Blob([htmlContent], { type: "text/html" })
   const url = URL.createObjectURL(blob)
   const a = document.createElement("a")
@@ -103,7 +110,7 @@ export async function sendReportEmail(
   htmlReport: string,
   candidateName: string,
   position: string,
-  reportData?: any,
+  reportData?: ReportData,
 ): Promise<boolean> {
   try {
     const response = await fetch("/api/send-email", {
@@ -120,7 +127,7 @@ export async function sendReportEmail(
     })
 
     if (!response.ok) {
-      throw new Error(`Email API failed: ${response.status}`)
+      throw new Error(`Email API error: ${response.status}`)
     }
 
     const result = await response.json()

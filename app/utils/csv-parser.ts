@@ -1,26 +1,24 @@
 export interface Question {
   ID: number
+  question: string
   type: string
   category: string
   difficulty: string
   points: number
-  question: string
   options?: string
+  answer?: string
 }
 
 export function parseCSV(csvText: string): Question[] {
   const lines = csvText.trim().split("\n")
-  if (lines.length < 2) {
-    throw new Error("CSV file appears to be empty or invalid")
-  }
+  const headers = lines[0].split(",").map((h) => h.trim())
 
-  const headers = lines[0].split(",").map((h) => h.trim().replace(/"/g, ""))
   const questions: Question[] = []
 
   for (let i = 1; i < lines.length; i++) {
-    const values = parseCSVLine(lines[i])
+    const values = lines[i].split(",").map((v) => v.trim())
 
-    if (values.length >= 6) {
+    if (values.length >= headers.length) {
       const question: Question = {
         ID: Number.parseInt(values[0]) || i,
         question: values[1] || "",
@@ -29,6 +27,7 @@ export function parseCSV(csvText: string): Question[] {
         difficulty: values[4] || "Medium",
         points: Number.parseInt(values[5]) || 10,
         options: values[6] || undefined,
+        answer: values[7] || undefined,
       }
 
       questions.push(question)
@@ -38,63 +37,54 @@ export function parseCSV(csvText: string): Question[] {
   return questions
 }
 
-function parseCSVLine(line: string): string[] {
-  const result: string[] = []
-  let current = ""
-  let inQuotes = false
-
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i]
-
-    if (char === '"') {
-      inQuotes = !inQuotes
-    } else if (char === "," && !inQuotes) {
-      result.push(current.trim())
-      current = ""
-    } else {
-      current += char
-    }
-  }
-
-  result.push(current.trim())
-  return result
-}
-
 export async function fetchAndParseQuestionsCsv(): Promise<Question[]> {
   try {
-    console.log("Fetching questions from local CSV file...")
     const response = await fetch("/Questions.csv")
-
     if (!response.ok) {
-      throw new Error(`Failed to fetch CSV: ${response.status} ${response.statusText}`)
+      throw new Error(`Failed to fetch CSV: ${response.status}`)
     }
 
     const csvText = await response.text()
-    console.log("CSV file loaded, parsing content...")
-
     return parseCSV(csvText)
   } catch (error) {
-    console.error("Error fetching or parsing CSV:", error)
-    throw new Error("Failed to load exam questions")
+    console.error("Error loading questions:", error)
+
+    // Fallback questions if CSV fails to load
+    return [
+      {
+        ID: 1,
+        question: "What is the difference between let, const, and var in JavaScript?",
+        type: "Open Ended",
+        category: "JavaScript",
+        difficulty: "Medium",
+        points: 15,
+      },
+      {
+        ID: 2,
+        question: "Which of the following is NOT a valid HTTP method?",
+        type: "Multiple Choice",
+        category: "Web Development",
+        difficulty: "Easy",
+        points: 10,
+        options: "GET, POST, DELETE, SEND",
+        answer: "SEND",
+      },
+      {
+        ID: 3,
+        question: "Calculate the time complexity of a binary search algorithm and explain your reasoning.",
+        type: "Calculation",
+        category: "Algorithms",
+        difficulty: "Hard",
+        points: 20,
+      },
+    ]
   }
 }
 
 export function getInitialExamData(questions: Question[]) {
-  const examData = {
-    multipleChoice: {} as { [key: string]: string },
-    concepts: {} as { [key: string]: string },
-    calculations: {} as { [key: string]: string },
+  return {
+    multipleChoice: {},
+    concepts: {},
+    calculations: {},
   }
-
-  questions.forEach((question) => {
-    if (question.type.toLowerCase().includes("multiple")) {
-      examData.multipleChoice[question.ID.toString()] = ""
-    } else if (question.type.toLowerCase().includes("concept")) {
-      examData.concepts[question.ID.toString()] = ""
-    } else {
-      examData.calculations[question.ID.toString()] = ""
-    }
-  })
-
-  return examData
 }

@@ -5,10 +5,8 @@ pages_build_output_dir = ".next"
 [vars]
 AI_GRADER_WORKER_URL = "https://ai-grader-worker.youraccount.workers.dev/"
 
-# Optional: Preview environment overrides
 [env.preview.vars]
-# AI_GRADER_WORKER_URL = "https://staging-ai-grader.youraccount.workers.dev/"
+AI_GRADER_WORKER_URL = "https://staging-ai-grader.youraccount.workers.dev/"
 
-# Optional: Production environment overrides  
 [env.production.vars]
-# AI_GRADER_WORKER_URL = "https://ai-grader-worker.youraccount.workers.dev/"
+AI_GRADER_WORKER_URL = "https://ai-grader-worker.youraccount.workers.dev/"

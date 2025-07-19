@@ -1,27 +1,29 @@
-export function getResendApiKey(): string {
-  return process.env.RESEND_API_KEY || ""
+export function getResendConfig() {
+  return {
+    apiKey: process.env.RESEND_API_KEY || "",
+    fromEmail: process.env.RESEND_FROM_EMAIL || "noreply@example.com",
+    toEmail: process.env.RESEND_TO_EMAIL || "hiring@example.com",
+  }
 }
 
-export function getResendFromEmail(): string {
-  return process.env.RESEND_FROM_EMAIL || "noreply@example.com"
+export function getXaiConfig() {
+  return {
+    apiKey: process.env.XAI_API_KEY || "",
+  }
 }
 
-export function getResendToEmail(): string {
-  return process.env.RESEND_TO_EMAIL || "hiring@example.com"
+export function getAiWorkerConfig() {
+  return {
+    url: process.env.AI_GRADER_WORKER_URL || "https://ai-grader-worker.youraccount.workers.dev/",
+  }
 }
 
-export function getSiteUrl(): string {
-  return process.env.SITE_URL || "https://localhost:3000"
+export function getSiteConfig() {
+  return {
+    url: process.env.SITE_URL || "https://cloudhire.pages.dev",
+  }
 }
 
-export function getXaiApiKey(): string {
-  return process.env.XAI_API_KEY || ""
-}
-
-export function getAiWorkerUrl(): string {
-  return process.env.AI_GRADER_WORKER_URL || ""
-}
-
-export function getDatabaseUrl(): string {
-  return process.env.DATABASE_URL || ""
+export function getWorkerUrl() {
+  return getAiWorkerConfig().url
 }

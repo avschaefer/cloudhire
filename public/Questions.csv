@@ -1,11 +1,11 @@
-ID,Question,Type,Category,Difficulty,Points,Options
-1,"What is the time complexity of binary search?","Multiple Choice","Algorithms","Easy",10,"O(n), O(log n), O(n^2), O(1)"
-2,"Explain the difference between SQL and NoSQL databases","Open Ended","Databases","Medium",15,
-3,"Calculate the factorial of 5 and show your work","Calculation","Mathematics","Easy",10,
-4,"What is polymorphism in object-oriented programming?","Multiple Choice","Programming","Medium",10,"Inheritance, Encapsulation, Polymorphism, Abstraction"
-5,"Describe how you would implement user authentication in a web application.","Open Ended","Security","Hard",20,
-6,"Calculate the space complexity of a recursive factorial function.","Calculation","Algorithms","Medium",15,
-7,"What is the difference between HTTP and HTTPS?","Multiple Choice","Networking","Easy",10,"Encryption, Port numbers, Speed, All of the above"
-8,"Explain how garbage collection works in Java","Open Ended","Programming","Hard",20,
-9,"Calculate the number of possible combinations for a 4-digit PIN.","Calculation","Mathematics","Easy",10,
-10,"What is a REST API?","Multiple Choice","Web Development","Medium",10,"Database, API Architecture, Programming Language, Framework"
+ID,Question,Type,Category,Difficulty,Points,Options,Answer
+1,"What is the difference between let, const, and var in JavaScript?",Open Ended,JavaScript,Medium,15,,
+2,"Which of the following is NOT a valid HTTP method?",Multiple Choice,Web Development,Easy,10,"GET,POST,DELETE,SEND",SEND
+3,"Calculate the time complexity of a binary search algorithm and explain your reasoning.",Calculation,Algorithms,Hard,20,,
+4,"Explain the concept of closures in JavaScript with an example.",Open Ended,JavaScript,Medium,15,,
+5,"What is the output of console.log(typeof null) in JavaScript?",Multiple Choice,JavaScript,Easy,5,"object,null,undefined,string",object
+6,"Design a database schema for an e-commerce application with users, products, and orders.",Open Ended,Database,Hard,25,,
+7,"What is the difference between SQL and NoSQL databases?",Open Ended,Database,Medium,15,,
+8,"Calculate the space complexity of the following recursive function: fibonacci(n)",Calculation,Algorithms,Medium,15,,
+9,"Which CSS property is used to control the spacing between elements?",Multiple Choice,CSS,Easy,5,"margin,padding,spacing,gap",margin
+10,"Explain the MVC (Model-View-Controller) architectural pattern.",Open Ended,Architecture,Medium,20,,

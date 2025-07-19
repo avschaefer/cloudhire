@@ -9,10 +9,9 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Remove optimizeCss to avoid "self is not defined" error
-  // experimental: {
-  //   optimizeCss: true,
-  // },
+  experimental: {
+    serverComponentsExternalPackages: ['recharts'],
+  },
   // Webpack optimizations for smaller bundles
   webpack: (config, { isServer }) => {
     // Reduce bundle size
