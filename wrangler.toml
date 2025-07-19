@@ -1,11 +1,10 @@
 name = "cloudhire"
 compatibility_date = "2025-07-19"
 compatibility_flags = ["nodejs_compat"]
-pages_build_output_dir = ".next"
+main = ".open-next/worker.js"  # OpenNext build output
 
 [[d1_databases]]
 binding = "DB"
 database_name = "cloudhire-db"
 database_id = "30768915-bb91-4955-a0a8-99e96742c717"
-
-migrations_dir = "migrations"  # Points to your /migrations folder for automatic application
+migrations_dir = "migrations"

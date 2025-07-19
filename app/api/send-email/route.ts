@@ -2,9 +2,9 @@
 import { NextResponse } from 'next/server';
 import { sendEmail } from '@/lib/resend';  // Import reusable function
 
-export const runtime = 'edge';  // Cloudflare compat
+export const runtime = 'nodejs';  // Node.js runtime for better compatibility
 
-export async function POST(request) {
+export async function POST(request: Request) {
   try {
     const { to = process.env.RESEND_TO_EMAIL, subject, html, reportData } = await request.json();  // Payload e.g., from exam submit
     // Optional: Generate report HTML if not provided (modular)
@@ -12,6 +12,7 @@ export async function POST(request) {
     const data = await sendEmail({ to, subject: subject || 'Exam Report', html: reportHtml });
     return NextResponse.json(data);
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

@@ -3,16 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "next build && rm -rf .next/cache",
-    "deploy:pages": "npx @cloudflare/next-on-pages",
+    "build": "next build",
+    "build:opennext": "next build && npx opennextjs-cloudflare build",
     "deploy:worker": "wrangler deploy python/grader.py --name ai-grader-worker",
     "dev": "next dev",
     "lint": "next lint",
     "start": "next start",
-    "pages:build": "next build && npx @cloudflare/next-on-pages",
-    "pages:dev": "next dev",
-    "pages:preview": "npm run pages:build && wrangler pages dev .next",
-    "pages:deploy": "npm run pages:build && wrangler pages deploy .next"
+    "preview": "npm run build:opennext && wrangler dev",
+    "deploy": "npm run build:opennext && wrangler deploy"
   },
   "dependencies": {
     "@google/generative-ai": "latest",
@@ -66,7 +64,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@cloudflare/next-on-pages": "^1.13.0",
+    "@opennextjs/cloudflare": "^1.5.1",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
