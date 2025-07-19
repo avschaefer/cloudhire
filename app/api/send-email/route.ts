@@ -1,45 +1,21 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { Resend } from "resend"
-
-// Initialize Resend with API key
-const resend = new Resend(process.env.RESEND_API_KEY)
+import { getResendClient, prepareEmailData, type EmailMetadata } from "@/utils/email-utils"
+import { saveReportToD1 } from "@/lib/d1"
 
 export async function POST(request: NextRequest) {
   try {
-    const { to, subject, htmlContent, attachments } = await request.json()
+    const { to, subject, htmlContent, attachments, reportData } = await request.json()
 
-    // Validate required environment variables
-    if (!process.env.RESEND_API_KEY) {
-      console.error("RESEND_API_KEY environment variable is not set")
-      return NextResponse.json({ success: false, error: "RESEND_API_KEY not configured" }, { status: 500 })
-    }
+    const resend = getResendClient()
+    const emailData = prepareEmailData(to, subject, htmlContent, attachments)
 
-    // For Resend without verified domain, use onboarding@resend.dev as sender
-    const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev"
-
-    console.log("Sending email with Resend:")
-    console.log("From:", fromEmail)
-    console.log("To:", to)
-    console.log("Subject:", subject)
-    console.log("Attachments:", attachments?.length || 0)
-
-    // Prepare email data
-    const emailData: any = {
-      from: fromEmail,
-      to: [to],
+    console.log("Sending email with Resend:", {
+      from: emailData.from,
+      to,
       subject,
-      html: htmlContent,
-    }
+      attachments: attachments?.length || 0,
+    })
 
-    // Add attachments if provided
-    if (attachments && attachments.length > 0) {
-      emailData.attachments = attachments.map((att: any) => ({
-        filename: att.filename,
-        content: Buffer.from(att.content, "utf-8"),
-      }))
-    }
-
-    // Send email using Resend
     const { data, error } = await resend.emails.send(emailData)
 
     if (error) {
@@ -55,10 +31,28 @@ export async function POST(request: NextRequest) {
 
     console.log("Email sent successfully with ID:", data?.id)
 
+    // Store report in D1 if reportData is provided
+    if (reportData) {
+      await saveReportToD1({
+        ...reportData,
+        emailId: data?.id,
+      })
+    }
+
+    // Store email metadata
+    const emailMetadata: EmailMetadata = {
+      to,
+      subject,
+      htmlContent,
+      emailId: data?.id,
+      sentAt: new Date(),
+    }
+
     return NextResponse.json({
       success: true,
       message: "Assessment report emailed successfully",
       emailId: data?.id,
+      metadata: emailMetadata,
     })
   } catch (error) {
     console.error("Email sending failed:", error)

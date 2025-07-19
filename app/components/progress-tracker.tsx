@@ -66,12 +66,7 @@ export default function ProgressTracker({ currentStage }: ProgressTrackerProps) 
 
         {/* Current Stage Description */}
         <div className="mt-4 text-center">
-          <p className="text-sm text-gray-600">
-            {currentStage === "welcome" && "Welcome to the Technical Assessment"}
-            {currentStage === "bio" && "Please provide your information to continue"}
-            {currentStage === "exam" && "Complete the technical assessment"}
-            {currentStage === "submission" && "Assessment completed successfully"}
-          </p>
+          
         </div>
       </div>
     </div>

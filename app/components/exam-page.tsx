@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
-import { Clock, CheckCircle, AlertTriangle, Save, User, Calculator } from "lucide-react"
+import { Clock, CheckCircle, AlertTriangle, User, Calculator } from "lucide-react"
 import type { ExamData, UserBio } from "../page"
 import type { Question } from "../utils/csv-parser"
 
@@ -183,7 +183,7 @@ export default function ExamPage({ initialExamData, userBio, onComplete, examSta
   })
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {/* Header */}
       <header className="bg-white border-b sticky top-16 z-40 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-4">
@@ -195,7 +195,6 @@ export default function ExamPage({ initialExamData, userBio, onComplete, examSta
                   {userBio.firstName} {userBio.lastName}
                 </span>
               </div>
-              <div className="hidden md:block text-sm text-gray-500">{userBio.position}</div>
             </div>
 
             <div className="flex items-center gap-6">
@@ -211,8 +210,7 @@ export default function ExamPage({ initialExamData, userBio, onComplete, examSta
               {/* Auto-save indicator */}
               {lastSaved && (
                 <div className="flex items-center gap-1 text-xs text-gray-500">
-                  <Save className="w-3 h-3" />
-                  <span>Saved {lastSaved.toLocaleTimeString()}</span>
+                  <span className="font-semibold leading-7">Saved {lastSaved.toLocaleTimeString()}</span>
                 </div>
               )}
 
@@ -254,7 +252,6 @@ export default function ExamPage({ initialExamData, userBio, onComplete, examSta
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span>{section.icon}</span>
                           <span className="font-medium">{section.label}</span>
                         </div>
                         {completion[section.id as keyof typeof completion].completed ===
@@ -265,9 +262,6 @@ export default function ExamPage({ initialExamData, userBio, onComplete, examSta
                       <div className="text-xs text-gray-500 mt-1">
                         {completion[section.id as keyof typeof completion].completed}/
                         {completion[section.id as keyof typeof completion].total} completed
-                      </div>
-                      <div className="text-xs text-gray-400">
-                        Time: {formatTime(timeSpent[section.id as keyof TimeSpent])}
                       </div>
                     </button>
                   )
@@ -306,11 +300,6 @@ export default function ExamPage({ initialExamData, userBio, onComplete, examSta
                           <div>
                             <p className="text-sm font-semibold text-blue-600 mb-1">Question {index + 1}:</p>
                             <p className="text-lg text-gray-900 leading-relaxed">{q.question}</p>
-                            {q.difficulty && (
-                              <Badge variant="outline" className="mt-2">
-                                {q.difficulty}
-                              </Badge>
-                            )}
                           </div>
                           {q.options && q.options.length > 0 ? (
                             <RadioGroup
@@ -445,40 +434,10 @@ export default function ExamPage({ initialExamData, userBio, onComplete, examSta
                               <p className="text-xs text-gray-500">
                                 {examData.calculations[`${q.ID}-explanation`]?.length || 0} characters
                               </p>
-                              <p className="text-xs text-green-600 font-medium">
-                                💡 Detailed work can earn partial credit
-                              </p>
                             </div>
                           </div>
 
                           {/* Completion Status */}
-                          <div className="bg-gray-50 p-4 rounded-lg">
-                            <h4 className="font-medium text-gray-800 mb-2">Completion Status:</h4>
-                            <div className="grid grid-cols-2 gap-4 text-sm">
-                              <div className="flex items-center gap-2">
-                                <div
-                                  className={`w-3 h-3 rounded-full ${
-                                    examData.calculations[`${q.ID}-answer`]?.trim() ? "bg-green-500" : "bg-gray-300"
-                                  }`}
-                                />
-                                <span>Numerical Answer</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <div
-                                  className={`w-3 h-3 rounded-full ${
-                                    examData.calculations[`${q.ID}-explanation`]?.trim()
-                                      ? "bg-green-500"
-                                      : "bg-gray-300"
-                                  }`}
-                                />
-                                <span>Work Shown</span>
-                              </div>
-                            </div>
-                            <p className="text-xs text-gray-600 mt-2">
-                              Both parts are recommended for full credit, but partial credit is available for either
-                              part.
-                            </p>
-                          </div>
                         </div>
                       ))}
                     </div>

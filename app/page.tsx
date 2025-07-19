@@ -1,14 +1,16 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-
 import { useState, useEffect } from "react"
 import WelcomePage from "./components/welcome-page"
 import BioPage from "./components/bio-page"
 import ExamPage from "./components/exam-page"
 import SubmissionPage from "./components/submission-page"
 import ProgressTracker from "./components/progress-tracker"
-import { fetchAndParseQuestionsCsv, getInitialExamData, type Question } from "./utils/csv-parser" // Import new utilities
+import { fetchAndParseQuestionsCsv, getInitialExamData, type Question } from "./utils/csv-parser"
+import { gradeExamWithGemini, getFallbackGrading, type GradingResult } from "@/utils/grader"
+import { generateEnhancedHTMLReport } from "./utils/enhanced-report-generator"
+import { sendReportEmail } from "./utils/email-service"
 
 export type Stage = "welcome" | "bio" | "exam" | "submission"
 
@@ -28,7 +30,7 @@ export interface UserBio {
 export interface ExamData {
   multipleChoice: { [key: string]: string }
   concepts: { [key: string]: string }
-  calculations: { [key: string]: string } // Now includes calc-q1-answer and calc-q1-explanation
+  calculations: { [key: string]: string }
 }
 
 export interface AppState {
@@ -69,13 +71,11 @@ export default function App() {
   // Load saved state and fetch questions on mount
   useEffect(() => {
     const loadAppState = async () => {
-      // Fetch questions first
       try {
         const fetchedQuestions = await fetchAndParseQuestionsCsv()
         setQuestions(fetchedQuestions)
         setIsLoadingQuestions(false)
 
-        // Initialize examData based on fetched questions if no saved data
         const savedState = localStorage.getItem("examAppState")
         if (savedState) {
           const parsed = JSON.parse(savedState)
@@ -100,7 +100,7 @@ export default function App() {
     loadAppState()
   }, [])
 
-  // Save state to localStorage whenever it changes (excluding questions and loading state)
+  // Save state to localStorage whenever it changes
   useEffect(() => {
     if (!isLoadingQuestions) {
       localStorage.setItem("examAppState", JSON.stringify(appState))
@@ -119,52 +119,40 @@ export default function App() {
     setAppState((prev) => ({ ...prev, examData }))
   }
 
-  const startExam = () => {
-    setAppState((prev) => ({
-      ...prev,
-      currentStage: "exam",
-      examStartTime: new Date(),
-    }))
-  }
-
   const completeExam = async (finalExamData: ExamData, timeSpent: number) => {
+    const examEndTime = new Date()
     setAppState((prev) => ({
       ...prev,
       currentStage: "submission",
       examData: finalExamData,
-      examEndTime: new Date(),
+      examEndTime,
       totalTimeSpent: timeSpent,
     }))
 
-    // Generate AI-graded report
+    // Generate AI-graded report asynchronously
     setTimeout(async () => {
+      const submissionId = `EXAM_${Date.now()}`
       const reportData = {
         candidate: appState.userBio,
         examData: finalExamData,
         examStartTime: appState.examStartTime,
-        examEndTime: new Date(),
+        examEndTime,
         totalTimeSpent: timeSpent,
-        submissionId: `EXAM_${Date.now()}`,
+        submissionId,
         submittedAt: new Date(),
-        questions: questions, // Pass questions to report data
+        questions,
       }
 
-      // Import AI grading functions
-      const { gradeExamWithGemini, getFallbackGrading } = await import("./utils/gemini-grader")
-      const { generateEnhancedHTMLReport } = await import("./utils/enhanced-report-generator")
-      const { sendReportEmail } = await import("./utils/email-service")
+      console.log("Starting AI grading with modular grader...")
 
-      console.log("Starting AI grading with Google Gemini...")
-
-      // Grade exam with Gemini AI
-      let gradingResult = await gradeExamWithGemini(finalExamData, appState.userBio, questions)
+      // Use modular grading system
+      let gradingResult: GradingResult | null = await gradeExamWithGemini(finalExamData, appState.userBio, questions)
 
       if (!gradingResult) {
-        console.log("Gemini grading failed, using fallback grading")
+        console.log("AI grading failed, using fallback grading")
         gradingResult = getFallbackGrading(finalExamData, questions)
       }
 
-      // Generate enhanced HTML report with AI grading
       const enhancedReportData = {
         ...reportData,
         gradingResult,
@@ -172,11 +160,19 @@ export default function App() {
 
       const htmlReport = generateEnhancedHTMLReport(enhancedReportData)
 
-      // Send email to hiring manager
+      // Send email with report data for D1 storage
       const emailSent = await sendReportEmail(
         htmlReport,
         `${appState.userBio.firstName} ${appState.userBio.lastName}`,
         appState.userBio.position,
+        {
+          submissionId,
+          candidateName: `${appState.userBio.firstName} ${appState.userBio.lastName}`,
+          position: appState.userBio.position,
+          examData: finalExamData,
+          gradingResult,
+          submittedAt: new Date(),
+        },
       )
 
       if (emailSent) {
@@ -215,10 +211,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Progress Tracker - Always visible */}
       <ProgressTracker currentStage={appState.currentStage} />
-
-      {/* Main Content */}
       <main>
         {appState.currentStage === "welcome" && <WelcomePage onNext={() => updateStage("bio")} />}
 
@@ -232,7 +225,7 @@ export default function App() {
             userBio={appState.userBio}
             onComplete={completeExam}
             examStartTime={appState.examStartTime}
-            questions={questions} // Pass questions here
+            questions={questions}
           />
         )}
 
