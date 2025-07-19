@@ -1,7 +1,6 @@
-import { GoogleGenerativeAI } from "@google/generative-ai"
-import { getAiGradingPrompt, getGeminiModelConfig } from "@/lib/config"
 import type { ExamData, UserBio } from "@/app/page"
 import type { Question } from "@/app/utils/csv-parser"
+import { getWorkerConfig } from "@/lib/config"
 
 export interface GradingResult {
   overallScore: number
@@ -23,42 +22,35 @@ export interface GradingResult {
   confidence: number
 }
 
-export async function gradeExamWithGemini(
+const WORKER_URL = getWorkerConfig().workerUrl
+
+export async function gradeExam(
   examData: ExamData,
   userBio: UserBio,
   questions: Question[],
 ): Promise<GradingResult | null> {
   try {
-    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY
-    if (!apiKey) {
-      console.error("NEXT_PUBLIC_GEMINI_API_KEY not configured")
-      return null
+    console.log("Sending exam data to Grok AI Worker...")
+
+    const response = await fetch(WORKER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        exam_data: examData,
+        user_bio: userBio,
+        questions,
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Worker error: ${response.status} - ${await response.text()}`)
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey)
-    const modelConfig = getGeminiModelConfig()
-    const model = genAI.getGenerativeModel(modelConfig)
-
-    const prompt = getAiGradingPrompt(examData, userBio, questions)
-    console.log("Sending prompt to Gemini AI...")
-
-    const result = await model.generateContent(prompt)
-    const responseText = result.response.text()
-
-    console.log("Gemini AI response received:", responseText.substring(0, 200) + "...")
-
-    // Try to extract JSON from the response
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) {
-      console.error("No JSON found in Gemini response")
-      return null
-    }
-
-    const gradingResult = JSON.parse(jsonMatch[0]) as GradingResult
-    console.log("Gemini grading completed successfully")
-    return gradingResult
+    const result = await response.json()
+    console.log("Grok AI grading completed successfully")
+    return result as GradingResult
   } catch (error) {
-    console.error("Gemini grading failed:", error)
+    console.error("Grok grading failed:", error)
     return null
   }
 }
@@ -155,16 +147,4 @@ export function getFallbackGrading(examData: ExamData, questions: Question[]): G
     recommendation,
     confidence: 60, // Lower confidence for fallback
   }
-}
-
-// Future: Replace this function with Grok integration
-export async function gradeExamWithGrok(
-  examData: ExamData,
-  userBio: UserBio,
-  questions: Question[],
-): Promise<GradingResult | null> {
-  // Placeholder for future Grok integration
-  // This would make a fetch request to a Python Worker running xAI's API
-  console.log("Grok integration not yet implemented")
-  return null
 }

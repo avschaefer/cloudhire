@@ -1,7 +1,7 @@
 import type { ExamData, UserBio } from "@/app/page"
 import type { Question } from "@/app/utils/csv-parser"
 
-export function getAiGradingPrompt(examData: ExamData, userBio: UserBio, questions: Question[]) {
+export function getGrokGradingPrompt(examData: ExamData, userBio: UserBio, questions: Question[]) {
   return `
 You are an expert technical evaluator for engineering positions. Please evaluate this technical exam submission.
 
@@ -64,15 +64,11 @@ Focus on technical accuracy, problem-solving approach, and communication clarity
 `
 }
 
-export function getGeminiModelConfig() {
+export function getGrokModelConfig() {
   return {
-    model: "gemini-1.5-flash",
-    generationConfig: {
-      temperature: 0.1,
-      topK: 1,
-      topP: 1,
-      maxOutputTokens: 4096,
-    },
+    model: "grok-3",
+    temperature: 0.1,
+    max_tokens: 4000,
   }
 }
 
@@ -80,5 +76,11 @@ export function getEmailConfig() {
   return {
     fromEmail: process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev",
     hiringManagerEmail: process.env.NEXT_PUBLIC_HIRING_MANAGER_EMAIL || "hiring@company.com",
+  }
+}
+
+export function getWorkerConfig() {
+  return {
+    workerUrl: process.env.AI_GRADER_WORKER_URL || "https://ai-grader-worker.youraccount.workers.dev/",
   }
 }

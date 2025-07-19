@@ -23,11 +23,3 @@ export function prepareEmailData(to: string, subject: string, htmlContent: strin
     })),
   }
 }
-
-export interface EmailMetadata {
-  to: string
-  subject: string
-  htmlContent: string
-  emailId?: string
-  sentAt?: Date
-}

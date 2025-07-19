@@ -8,7 +8,7 @@ import ExamPage from "./components/exam-page"
 import SubmissionPage from "./components/submission-page"
 import ProgressTracker from "./components/progress-tracker"
 import { fetchAndParseQuestionsCsv, getInitialExamData, type Question } from "./utils/csv-parser"
-import { gradeExamWithGemini, getFallbackGrading, type GradingResult } from "@/utils/grader"
+import { gradeExam, getFallbackGrading, type GradingResult } from "@/utils/grader"
 import { generateEnhancedHTMLReport } from "./utils/enhanced-report-generator"
 import { sendReportEmail } from "./utils/email-service"
 
@@ -68,7 +68,6 @@ export default function App() {
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(true)
   const [questionError, setQuestionError] = useState<string | null>(null)
 
-  // Load saved state and fetch questions on mount
   useEffect(() => {
     const loadAppState = async () => {
       try {
@@ -100,7 +99,6 @@ export default function App() {
     loadAppState()
   }, [])
 
-  // Save state to localStorage whenever it changes
   useEffect(() => {
     if (!isLoadingQuestions) {
       localStorage.setItem("examAppState", JSON.stringify(appState))
@@ -129,7 +127,6 @@ export default function App() {
       totalTimeSpent: timeSpent,
     }))
 
-    // Generate AI-graded report asynchronously
     setTimeout(async () => {
       const submissionId = `EXAM_${Date.now()}`
       const reportData = {
@@ -143,13 +140,13 @@ export default function App() {
         questions,
       }
 
-      console.log("Starting AI grading with modular grader...")
+      console.log("Starting AI grading with xAI Grok...")
 
-      // Use modular grading system
-      let gradingResult: GradingResult | null = await gradeExamWithGemini(finalExamData, appState.userBio, questions)
+      // Use modular grading system with Grok
+      let gradingResult: GradingResult | null = await gradeExam(finalExamData, appState.userBio, questions)
 
       if (!gradingResult) {
-        console.log("AI grading failed, using fallback grading")
+        console.log("Grok grading failed, using fallback grading")
         gradingResult = getFallbackGrading(finalExamData, questions)
       }
 
@@ -181,7 +178,6 @@ export default function App() {
         console.error("Failed to email AI-graded report")
       }
 
-      // Store for development viewing
       localStorage.setItem("latestExamReport", JSON.stringify(enhancedReportData))
     }, 1000)
   }

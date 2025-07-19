@@ -1,62 +1,77 @@
-// Cloudflare D1 integration module
-// This will be used when deploying to Cloudflare Pages
+// lib/d1.ts - Cloudflare D1 integration for storing exam reports
+import type { GradingResult } from "@/utils/grader"
+
+// Note: This will only work in Cloudflare Workers environment
+// For local development, these functions will be no-ops
 
 export interface ReportData {
   submissionId: string
   candidateName: string
   position: string
   examData: any
-  gradingResult: any
+  gradingResult: GradingResult
   submittedAt: Date
-  emailId?: string
 }
 
-// Note: This requires Cloudflare environment
 export async function saveReportToD1(reportData: ReportData) {
   try {
-    // In Cloudflare environment, we would use:
-    // const { env } = getRequestContext();
-    // const stmt = env.DB.prepare('INSERT INTO exam_reports (submission_id, candidate_name, position, data, submitted_at) VALUES (?, ?, ?, ?, ?)').bind(
-    //   reportData.submissionId,
-    //   reportData.candidateName,
-    //   reportData.position,
-    //   JSON.stringify(reportData),
-    //   reportData.submittedAt.toISOString()
-    // );
-    // await stmt.run();
+    // This will only work in Cloudflare Workers environment
+    if (typeof globalThis !== "undefined" && "getRequestContext" in globalThis) {
+      const { getRequestContext } = await import("@cloudflare/next-on-pages")
+      const { env } = getRequestContext()
 
-    console.log("D1 save would happen here in Cloudflare environment:", reportData.submissionId)
+      const stmt = env.DB.prepare(
+        "INSERT INTO exam_reports (submission_id, candidate_name, position, data, created_at) VALUES (?, ?, ?, ?, ?)",
+      ).bind(
+        reportData.submissionId,
+        reportData.candidateName,
+        reportData.position,
+        JSON.stringify(reportData),
+        new Date().toISOString(),
+      )
+
+      await stmt.run()
+      console.log("Report saved to D1 database")
+    } else {
+      console.log("D1 not available in current environment - skipping database save")
+    }
   } catch (error) {
     console.error("Failed to save report to D1:", error)
   }
 }
 
-export async function getReportById(id: string): Promise<ReportData | null> {
+export async function getReportById(id: string) {
   try {
-    // In Cloudflare environment:
-    // const { env } = getRequestContext();
-    // const result = await env.DB.prepare('SELECT data FROM exam_reports WHERE submission_id = ?').bind(id).first();
-    // return result ? JSON.parse(result.data as string) : null;
+    if (typeof globalThis !== "undefined" && "getRequestContext" in globalThis) {
+      const { getRequestContext } = await import("@cloudflare/next-on-pages")
+      const { env } = getRequestContext()
 
-    console.log("D1 fetch would happen here in Cloudflare environment:", id)
+      const result = await env.DB.prepare("SELECT data FROM exam_reports WHERE submission_id = ?").bind(id).first()
+
+      return result ? JSON.parse(result.data as string) : null
+    }
     return null
   } catch (error) {
-    console.error("Failed to fetch report from D1:", error)
+    console.error("Failed to get report from D1:", error)
     return null
   }
 }
 
-export async function getAllReports(): Promise<ReportData[]> {
+export async function getAllReports() {
   try {
-    // In Cloudflare environment:
-    // const { env } = getRequestContext();
-    // const results = await env.DB.prepare('SELECT data FROM exam_reports ORDER BY submitted_at DESC').all();
-    // return results.results.map(row => JSON.parse(row.data as string));
+    if (typeof globalThis !== "undefined" && "getRequestContext" in globalThis) {
+      const { getRequestContext } = await import("@cloudflare/next-on-pages")
+      const { env } = getRequestContext()
 
-    console.log("D1 fetch all would happen here in Cloudflare environment")
+      const results = await env.DB.prepare(
+        "SELECT submission_id, candidate_name, position, created_at FROM exam_reports ORDER BY created_at DESC",
+      ).all()
+
+      return results.results || []
+    }
     return []
   } catch (error) {
-    console.error("Failed to fetch all reports from D1:", error)
+    console.error("Failed to get reports from D1:", error)
     return []
   }
 }

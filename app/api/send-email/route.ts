@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getResendClient, prepareEmailData, type EmailMetadata } from "@/utils/email-utils"
-import { saveReportToD1 } from "@/lib/d1"
+import { getResendClient, prepareEmailData } from "@/utils/email-utils"
+import { saveReportToD1, type ReportData } from "@/lib/d1"
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,10 +21,7 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error("Resend API error:", error)
       return NextResponse.json(
-        {
-          success: false,
-          error: `Resend error: ${error.message || JSON.stringify(error)}`,
-        },
+        { success: false, error: `Resend error: ${error.message || JSON.stringify(error)}` },
         { status: 400 },
       )
     }
@@ -36,31 +33,18 @@ export async function POST(request: NextRequest) {
       await saveReportToD1({
         ...reportData,
         emailId: data?.id,
-      })
-    }
-
-    // Store email metadata
-    const emailMetadata: EmailMetadata = {
-      to,
-      subject,
-      htmlContent,
-      emailId: data?.id,
-      sentAt: new Date(),
+      } as ReportData)
     }
 
     return NextResponse.json({
       success: true,
       message: "Assessment report emailed successfully",
       emailId: data?.id,
-      metadata: emailMetadata,
     })
   } catch (error) {
     console.error("Email sending failed:", error)
     return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "Failed to send email",
-      },
+      { success: false, error: error instanceof Error ? error.message : "Failed to send email" },
       { status: 500 },
     )
   }
