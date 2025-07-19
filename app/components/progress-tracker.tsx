@@ -1,73 +1,48 @@
-import { CheckCircle, Clock, FileText, User, Trophy } from "lucide-react"
+"use client"
+
+import { cn } from "@/lib/utils"
 import type { Stage } from "../page"
 
 interface ProgressTrackerProps {
   currentStage: Stage
 }
 
+const stages: { id: Stage; name: string }[] = [
+  { id: "welcome", name: "Welcome" },
+  { id: "bio", name: "Your Info" },
+  { id: "exam", name: "Assessment" },
+  { id: "submission", name: "Complete" },
+]
+
 export default function ProgressTracker({ currentStage }: ProgressTrackerProps) {
-  const stages = [
-    { id: "welcome", label: "Welcome", icon: Clock },
-    { id: "bio", label: "Information", icon: User },
-    { id: "exam", label: "Assessment", icon: FileText },
-    { id: "submission", label: "Complete", icon: Trophy },
-  ]
-
-  const getCurrentStageIndex = () => {
-    return stages.findIndex((stage) => stage.id === currentStage)
-  }
-
-  const currentIndex = getCurrentStageIndex()
+  const currentStageIndex = stages.findIndex((s) => s.id === currentStage)
 
   return (
-    <div className="bg-white border-b shadow-sm sticky top-0 z-50">
-      <div className="max-w-4xl mx-auto px-4 py-4">
-        <div className="flex items-center justify-center">
-          {stages.map((stage, index) => {
-            const Icon = stage.icon
-            const isCompleted = index < currentIndex
-            const isCurrent = index === currentIndex
-            const isLast = index === stages.length - 1
-
-            return (
-              <div key={stage.id} className="flex items-center">
-                {/* Stage Circle and Label */}
-                <div className="flex flex-col items-center">
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
-                      isCompleted
-                        ? "bg-green-500 border-green-500 text-white"
-                        : isCurrent
-                          ? "bg-blue-500 border-blue-500 text-white"
-                          : "bg-gray-100 border-gray-300 text-gray-400"
-                    }`}
-                  >
-                    {isCompleted ? <CheckCircle className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
-                  </div>
-                  <span
-                    className={`text-xs mt-2 font-medium whitespace-nowrap ${
-                      isCompleted || isCurrent ? "text-gray-900" : "text-gray-400"
-                    }`}
-                  >
-                    {stage.label}
-                  </span>
-                </div>
-
-                {/* Connector Line - Only show if not the last item */}
-                {!isLast && (
-                  <div className="flex-shrink-0 mx-4 w-16 sm:w-20 md:w-24">
-                    <div className={`h-0.5 transition-all ${isCompleted ? "bg-green-500" : "bg-gray-200"}`} />
-                  </div>
-                )}
+    <div className="w-full p-4 bg-white shadow-md">
+      <div className="flex justify-between items-center max-w-4xl mx-auto">
+        {stages.map((stage, index) => (
+          <div key={stage.id} className="flex items-center">
+            <div
+              className={cn(
+                "w-8 h-8 rounded-full flex items-center justify-center font-bold",
+                index <= currentStageIndex ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-500",
+              )}
+            >
+              {index < currentStageIndex ? "✓" : index + 1}
+            </div>
+            <span className={cn("ml-2 font-semibold", index <= currentStageIndex ? "text-blue-600" : "text-gray-500")}>
+              {stage.name}
+            </span>
+            {index < stages.length - 1 && (
+              <div className="flex-1 h-1 mx-4 bg-gray-200">
+                <div
+                  className={cn("h-1 bg-blue-600", index < currentStageIndex ? "w-full" : "w-0")}
+                  style={{ transition: "width 0.5s" }}
+                />
               </div>
-            )
-          })}
-        </div>
-
-        {/* Current Stage Description */}
-        <div className="mt-4 text-center">
-          
-        </div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   )

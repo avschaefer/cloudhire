@@ -67,10 +67,6 @@ export default function WelcomePage({ onNext }: WelcomePageProps) {
               <span className="text-gray-600">Total Questions:</span>
               <span className="font-semibold">{totalQuestions} questions</span>
             </div>
-            <div className="flex justify-between items-center py-2 border-b">
-              <span className="text-gray-600">Question Types:</span>
-              <span className="font-semibold">Mixed format</span>
-            </div>
             <div className="flex justify-between items-center py-2">
               <span className="text-gray-600">Auto-save:</span>
               <span className="font-semibold text-green-600">Enabled</span>
@@ -89,41 +85,17 @@ export default function WelcomePage({ onNext }: WelcomePageProps) {
             <div className="space-y-3">
               {mcQuestions.length > 0 && (
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold text-sm">
-                    1
-                  </div>
-                  <div>
-                    <p className="font-medium">Multiple Choice</p>
-                    <p className="text-sm text-gray-500">
-                      {mcQuestions.length} questions - Technical knowledge & theory
-                    </p>
-                  </div>
+                  <p className="font-medium">Multiple Choice ({mcQuestions.length})</p>
                 </div>
               )}
               {conceptQuestions.length > 0 && (
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-semibold text-sm">
-                    2
-                  </div>
-                  <div>
-                    <p className="font-medium">Concepts</p>
-                    <p className="text-sm text-gray-500">
-                      {conceptQuestions.length} questions - Explain engineering principles
-                    </p>
-                  </div>
+                  <p className="font-medium">Concepts ({conceptQuestions.length})</p>
                 </div>
               )}
               {calculationQuestions.length > 0 && (
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-semibold text-sm">
-                    3
-                  </div>
-                  <div>
-                    <p className="font-medium">Calculations</p>
-                    <p className="text-sm text-gray-500">
-                      {calculationQuestions.length} questions - Numerical problem solving
-                    </p>
-                  </div>
+                  <p className="font-medium">Calculations ({calculationQuestions.length})</p>
                 </div>
               )}
             </div>
@@ -134,23 +106,16 @@ export default function WelcomePage({ onNext }: WelcomePageProps) {
       <Alert className="mb-8">
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          <strong>Important:</strong> Once you begin the assessment, you cannot go back to previous sections. Make sure
-          you have a stable internet connection and a quiet environment before starting.
+          <strong>Important:</strong> Once you begin, you cannot go back. Ensure you have a stable connection.
         </AlertDescription>
       </Alert>
 
       <Card>
         <CardContent className="p-8 text-center">
-          <div className="max-w-2xl mx-auto">
-            <h3 className="text-2xl font-semibold mb-4">Ready to Begin?</h3>
-            <p className="text-gray-600 mb-6">
-              The next step will collect your personal information, followed by the technical assessment. Please ensure
-              you have enough time to complete the entire process.
-            </p>
-            <Button onClick={onNext} size="lg" className="bg-blue-600 hover:bg-blue-700 px-8">
-              Start Assessment Process
-            </Button>
-          </div>
+          <h3 className="text-2xl font-semibold mb-4">Ready to Begin?</h3>
+          <Button onClick={onNext} size="lg" className="bg-blue-600 hover:bg-blue-700 px-8">
+            Start Assessment Process
+          </Button>
         </CardContent>
       </Card>
     </div>
