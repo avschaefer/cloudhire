@@ -10,7 +10,8 @@
     "lint": "next lint",
     "start": "next start",
     "preview": "npm run build:opennext && wrangler dev",
-    "deploy": "npm run build:opennext && wrangler deploy"
+    "deploy": "npm run build:opennext && wrangler deploy",
+    "ci:build": "npm ci && npm run build:opennext"
   },
   "dependencies": {
     "@google/generative-ai": "latest",

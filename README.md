@@ -1,30 +1,101 @@
-# Exam Web App
+# CloudHire - AI-Evaluated Technical Exams
 
-*Automatically synced with your [v0.dev](https://v0.dev) deployments*
+A Next.js web application for conducting AI-evaluated technical exams with automated grading, report generation, and email sharing via Resend.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/andrew-schaefers-projects-2d975ed4/v0-exam-app-pages)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/Tbvcn67E6pW)
+## 🚀 Deployment
 
-## Overview
+This application is deployed on **Cloudflare Workers** using OpenNext for optimal performance and cost-effectiveness.
 
-This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).
+### Live Demo
+- **Production**: [Coming Soon]
+- **Development**: [Coming Soon]
 
-## Deployment
+## 🛠️ Tech Stack
 
-Your project is live at:
+- **Frontend**: Next.js 15, React 19, TypeScript
+- **Styling**: Tailwind CSS, Radix UI Components
+- **Backend**: Cloudflare Workers, D1 Database
+- **AI Grading**: Python-based evaluation system
+- **Email**: Resend for automated report sharing
+- **Deployment**: Cloudflare Workers via OpenNext
 
-**[https://vercel.com/andrew-schaefers-projects-2d975ed4/v0-exam-app-pages](https://vercel.com/andrew-schaefers-projects-2d975ed4/v0-exam-app-pages)**
+## 📋 Prerequisites
 
-## Build your app
+- Node.js 22+
+- npm or pnpm
+- Cloudflare account with D1 database
+- Resend account for email functionality
 
-Continue building your app on:
+## 🚀 Quick Start
 
-**[https://v0.dev/chat/projects/Tbvcn67E6pW](https://v0.dev/chat/projects/Tbvcn67E6pW)**
+### Local Development
 
-## How It Works
+```bash
+# Clone the repository
+git clone https://github.com/avschaefer/cloudhire.git
+cd cloudhire
 
-1. Create and modify your project using [v0.dev](https://v0.dev)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+
+### Build and Deploy
+
+```bash
+# Build for production
+npm run build:opennext
+
+# Deploy to Cloudflare Workers
+npm run deploy
+```
+
+## 🔧 Environment Variables
+
+Create a `.env.local` file with the following variables:
+
+```bash
+# Resend Email Service
+RESEND_API_KEY=your_resend_api_key
+RESEND_FROM_EMAIL=your_verified_email
+RESEND_TO_EMAIL=recipient_email
+
+# Site Configuration
+SITE_URL=https://your-domain.com
+NEXT_PUBLIC_HIRING_MANAGER_EMAIL=hiring@example.com
+
+# AI Grader (if using separate worker)
+AI_GRADER_WORKER_URL=https://ai-grader-worker.your-subdomain.workers.dev
+
+# Gemini AI (if using)
+NEXT_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
+```
+
+## 📁 Project Structure
+
+```
+cloudhire/
+├── app/                    # Next.js app directory
+│   ├── api/               # API routes
+│   ├── components/        # React components
+│   └── utils/             # Utility functions
+├── components/            # Shared UI components
+├── lib/                   # Library configurations
+├── migrations/            # D1 database migrations
+├── python/                # Python AI grader
+└── public/                # Static assets
+```
+
+## 🔄 Migration from Vercel
+
+This project has been migrated from Vercel to Cloudflare Workers for:
+- ✅ Vercel-free deployment
+- ✅ Better cost-effectiveness
+- ✅ Full Next.js feature support
+- ✅ Seamless D1 database integration
+
+## 📝 License
+
+MIT License - see LICENSE file for details.
