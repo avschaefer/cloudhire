@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone', // Add for Vercel
   eslint: {
     ignoreDuringBuilds: true,
   },

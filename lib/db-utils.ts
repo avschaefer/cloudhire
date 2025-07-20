@@ -1,5 +1,6 @@
 // lib/db-utils.ts - Modular D1 database utilities
-import { getDatabaseConfig } from './config';
+import { sql } from '@vercel/postgres';
+import { getEnv } from './envConfig'; // Assuming envConfig is created
 
 export interface ExamData {
   id: string;
@@ -41,15 +42,14 @@ export class DatabaseError extends Error {
   }
 }
 
-export async function getD1Client(env: any) {
-  const dbConfig = getDatabaseConfig();
-  const db = env[dbConfig.binding];
-  
-  if (!db) {
-    throw new DatabaseError(`D1 database binding '${dbConfig.binding}' not found`);
-  }
-  
-  return db;
+export function createDbClient() {
+  const connectionString = getEnv('DATABASE_URL');
+  return { sql: (query, params) => sql(query, params) };
+}
+
+export async function queryDb(sqlQuery, params = []) {
+  const client = createDbClient();
+  return await client.sql(sqlQuery, params);
 }
 
 export async function insertExamResult(
