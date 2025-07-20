@@ -49,7 +49,7 @@ export function getConfig(): Config {
       graderWorkerUrl: getOptionalEnvVar('AI_GRADER_WORKER_URL'),
     },
     site: {
-      url: getOptionalEnvVar('SITE_URL', 'https://cloudhire.avschaefer.workers.dev'),
+      url: getOptionalEnvVar('SITE_URL', 'https://www.cloudhire.app'),
     },
     database: {
       binding: 'DB',

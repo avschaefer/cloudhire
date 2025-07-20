@@ -7,8 +7,8 @@ A Next.js web application for conducting AI-evaluated technical exams with autom
 This application is deployed on **Cloudflare Workers** using OpenNext for optimal performance and cost-effectiveness.
 
 ### Live Demo
-- **Production**: [Coming Soon]
-- **Development**: [Coming Soon]
+- **Production**: [https://www.cloudhire.app](https://www.cloudhire.app)
+- **Development**: [https://cloudhire.avschaefer.workers.dev](https://cloudhire.avschaefer.workers.dev)
 
 ## 🛠️ Tech Stack
 

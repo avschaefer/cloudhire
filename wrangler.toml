@@ -5,7 +5,12 @@ main = ".open-next/worker.js"  # OpenNext build output
 
 # Environment variables (secrets should be set via wrangler secret put)
 [vars]
-SITE_URL = "https://cloudhire.avschaefer.workers.dev"
+SITE_URL = "https://www.cloudhire.app"
+
+# Custom domain configuration
+[[routes]]
+pattern = "www.cloudhire.app/*"
+zone_name = "cloudhire.app"
 
 # D1 Database configuration
 [[d1_databases]]
@@ -18,7 +23,3 @@ migrations_dir = "migrations"
 [build]
 command = "npm run build:opennext"
 watch_dir = "src"
-
-# Deployment configuration
-[deploy]
-upload_dir = ".open-next"
