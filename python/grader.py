@@ -1,10 +1,12 @@
 import json
 from typing import Dict, List, Any
 import os
+from api_client import XAIClient, XAIApiError
+from report_generator import ReportGenerator
 
 def handler(request):
     """
-    AI-powered exam grader using xAI Grok
+    AI-powered exam grader using xAI Grok with modular architecture
     """
     try:
         # Parse the request
@@ -17,8 +19,16 @@ def handler(request):
         questions = data.get('questions', [])
         user_info = data.get('userInfo', {})
         
-        # For now, return a basic grading result
-        # This will be enhanced with actual AI grading
+        # Initialize AI client and report generator
+        try:
+            ai_client = XAIClient()
+            report_generator = ReportGenerator()
+        except XAIApiError as e:
+            print(f"Warning: AI client initialization failed: {e}")
+            ai_client = None
+            report_generator = ReportGenerator()
+        
+        # Grade each answer using AI or fallback
         grading_results = []
         total_score = 0
         max_score = 0
@@ -27,34 +37,55 @@ def handler(request):
             question = next((q for q in questions if q['id'] == answer['questionId']), None)
             if not question:
                 continue
-                
-            # Basic scoring logic (to be replaced with AI)
-            score = grade_answer(answer, question)
-            max_score += question['points']
-            total_score += score
+            
+            # Use AI grading if available, otherwise fallback
+            if ai_client:
+                try:
+                    grading_result = ai_client.grade_exam_response(
+                        question, 
+                        answer.get('answer', ''), 
+                        user_info
+                    )
+                except XAIApiError as e:
+                    print(f"AI grading failed for question {answer['questionId']}: {e}")
+                    grading_result = fallback_grading(answer, question)
+            else:
+                grading_result = fallback_grading(answer, question)
             
             grading_results.append({
                 'questionId': answer['questionId'],
-                'score': score,
-                'maxScore': question['points'],
-                'feedback': generate_feedback(answer, question, score),
-                'strengths': identify_strengths(answer, question),
-                'improvements': identify_improvements(answer, question)
+                'answer': answer.get('answer', ''),
+                'timeSpent': answer.get('timeSpent', 0),
+                **grading_result
             })
+            
+            total_score += grading_result['score']
+            max_score += grading_result['maxScore']
         
-        # Generate overall feedback
-        percentage = (total_score / max_score * 100) if max_score > 0 else 0
-        overall_feedback = generate_overall_feedback(percentage, grading_results)
+        # Generate comprehensive report
+        exam_metadata = {
+            'completedAt': data.get('completedAt', ''),
+            'timeSpent': sum(answer.get('timeSpent', 0) for answer in answers),
+            'totalQuestions': len(questions)
+        }
         
+        report = report_generator.generate_exam_report(
+            grading_results, 
+            user_info, 
+            exam_metadata
+        )
+        
+        # Add legacy fields for backward compatibility
         result = {
             'userInfo': user_info,
             'answers': answers,
             'gradingResults': grading_results,
             'totalScore': total_score,
             'maxScore': max_score,
-            'overallFeedback': overall_feedback,
-            'completedAt': data.get('completedAt', ''),
-            'timeSpent': sum(answer.get('timeSpent', 0) for answer in answers)
+            'overallFeedback': report['analysis']['overallFeedback'],
+            'completedAt': exam_metadata['completedAt'],
+            'timeSpent': exam_metadata['timeSpent'],
+            'report': report  # Include full report
         }
         
         return {
@@ -67,6 +98,7 @@ def handler(request):
         }
         
     except Exception as e:
+        print(f"Error in exam grading: {e}")
         return {
             'statusCode': 500,
             'headers': {
@@ -76,83 +108,74 @@ def handler(request):
             'body': json.dumps({'error': str(e)})
         }
 
-def grade_answer(answer: Dict[str, Any], question: Dict[str, Any]) -> int:
-    """Grade a single answer"""
-    if question['type'] == 'multiple-choice':
+def fallback_grading(answer: Dict[str, Any], question: Dict[str, Any]) -> Dict[str, Any]:
+    """Fallback grading when AI is unavailable"""
+    max_score = question.get('points', 0)
+    answer_text = answer.get('answer', '')
+    
+    if question.get('type') == 'multiple-choice':
         correct_answer = question.get('correctAnswer', '')
-        return question['points'] if answer['answer'] == correct_answer else 0
+        score = max_score if answer_text.strip() == correct_answer else 0
+        feedback = "Correct!" if score == max_score else f"Incorrect. The correct answer was: {correct_answer}"
     else:
         # For essay questions, score based on length and content
-        word_count = len(answer['answer'].split())
+        word_count = len(answer_text.split())
         if word_count >= 100:
-            return int(question['points'] * 0.9)
+            score = int(max_score * 0.9)
+            feedback = "Excellent detailed response showing deep understanding."
         elif word_count >= 50:
-            return int(question['points'] * 0.7)
+            score = int(max_score * 0.7)
+            feedback = "Good response with adequate detail."
         elif word_count >= 20:
-            return int(question['points'] * 0.5)
+            score = int(max_score * 0.5)
+            feedback = "Basic response that could benefit from more detail."
         else:
-            return int(question['points'] * 0.2)
+            score = int(max_score * 0.2)
+            feedback = "Very brief response. Consider providing more comprehensive answers."
+    
+    # Identify strengths and improvements
+    strengths = identify_strengths(answer_text, question)
+    improvements = identify_improvements(answer_text, question)
+    
+    return {
+        'score': score,
+        'maxScore': max_score,
+        'feedback': feedback,
+        'strengths': strengths,
+        'improvements': improvements
+    }
 
-def generate_feedback(answer: Dict[str, Any], question: Dict[str, Any], score: int) -> str:
-    """Generate feedback for an answer"""
-    if question['type'] == 'multiple-choice':
-        if score == question['points']:
-            return "Correct! Well done."
-        else:
-            return f"Incorrect. The correct answer was: {question.get('correctAnswer', 'Not specified')}"
-    else:
-        word_count = len(answer['answer'].split())
-        if word_count >= 100:
-            return "Excellent detailed response showing deep understanding."
-        elif word_count >= 50:
-            return "Good response with adequate detail."
-        elif word_count >= 20:
-            return "Basic response that could benefit from more detail."
-        else:
-            return "Very brief response. Consider providing more comprehensive answers."
-
-def identify_strengths(answer: Dict[str, Any], question: Dict[str, Any]) -> List[str]:
+def identify_strengths(answer_text: str, question: Dict[str, Any]) -> List[str]:
     """Identify strengths in the answer"""
     strengths = []
-    word_count = len(answer['answer'].split())
+    word_count = len(answer_text.split())
     
     if word_count >= 50:
         strengths.append("Provided detailed explanation")
     
-    if any(keyword in answer['answer'].lower() for keyword in ['example', 'experience', 'project']):
+    if any(keyword in answer_text.lower() for keyword in ['example', 'experience', 'project']):
         strengths.append("Included relevant examples")
     
-    if question['category'] == 'Technical' and any(tech in answer['answer'].lower() for tech in ['api', 'database', 'framework', 'library']):
+    if question.get('category') == 'Technical' and any(tech in answer_text.lower() for tech in ['api', 'database', 'framework', 'library']):
         strengths.append("Demonstrated technical knowledge")
     
     return strengths
 
-def identify_improvements(answer: Dict[str, Any], question: Dict[str, Any]) -> List[str]:
+def identify_improvements(answer_text: str, question: Dict[str, Any]) -> List[str]:
     """Identify areas for improvement"""
     improvements = []
-    word_count = len(answer['answer'].split())
+    word_count = len(answer_text.split())
     
     if word_count < 30:
         improvements.append("Could provide more detailed explanations")
     
-    if question['category'] == 'Technical' and not any(tech in answer['answer'].lower() for tech in ['api', 'database', 'framework', 'library', 'code']):
+    if question.get('category') == 'Technical' and not any(tech in answer_text.lower() for tech in ['api', 'database', 'framework', 'library', 'code']):
         improvements.append("Could include more technical details")
     
-    if 'experience' in question['question'].lower() and 'experience' not in answer['answer'].lower():
+    if 'experience' in question.get('question', '').lower() and 'experience' not in answer_text.lower():
         improvements.append("Could share more specific experiences")
     
     return improvements
-
-def generate_overall_feedback(percentage: float, grading_results: List[Dict[str, Any]]) -> str:
-    """Generate overall feedback for the exam"""
-    if percentage >= 85:
-        return f"Outstanding performance ({percentage:.0f}%)! You demonstrated excellent knowledge and problem-solving skills across all areas."
-    elif percentage >= 70:
-        return f"Strong performance ({percentage:.0f}%)! You showed good understanding with room for growth in some areas."
-    elif percentage >= 55:
-        return f"Solid effort ({percentage:.0f}%). Focus on the improvement areas noted to strengthen your technical skills."
-    else:
-        return f"Thank you for your submission ({percentage:.0f}%). Consider reviewing the feedback to identify key areas for development."
 
 # For Cloudflare Workers
 def fetch(request):

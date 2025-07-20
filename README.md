@@ -15,7 +15,7 @@ This application is deployed on **Cloudflare Workers** using OpenNext for optima
 - **Frontend**: Next.js 15, React 19, TypeScript
 - **Styling**: Tailwind CSS, Radix UI Components
 - **Backend**: Cloudflare Workers, D1 Database
-- **AI Grading**: Python-based evaluation system
+- **AI Grading**: xAI Grok-powered evaluation system
 - **Email**: Resend for automated report sharing
 - **Deployment**: Cloudflare Workers via OpenNext
 
@@ -45,32 +45,62 @@ npm run dev
 ### Build and Deploy
 
 ```bash
+# Test configuration
+npm run test:config
+npm run test:email
+
 # Build for production
 npm run build:opennext
 
 # Deploy to Cloudflare Workers
 npm run deploy
+
+# Deploy to preview environment
+npm run deploy:preview
+
+# Local development with Workers
+npm run preview
 ```
+
+### Troubleshooting
+
+If you encounter build failures:
+
+1. **Check Node.js version**: Ensure you're using Node.js 22+
+2. **Validate configuration**: Run `npm run test:config`
+3. **Check secrets**: Ensure all required secrets are set in Cloudflare
+4. **Clean build**: Run `npm run clean` and rebuild
+5. **Check logs**: Use `wrangler tail` to monitor deployment logs
 
 ## 🔧 Environment Variables
 
-Create a `.env.local` file with the following variables:
+### Required Variables
+Set these secrets in Cloudflare Workers:
 
 ```bash
-# Resend Email Service
+# Resend Email Service (Required)
 RESEND_API_KEY=your_resend_api_key
 RESEND_FROM_EMAIL=your_verified_email
 RESEND_TO_EMAIL=recipient_email
 
-# Site Configuration
-SITE_URL=https://your-domain.com
-NEXT_PUBLIC_HIRING_MANAGER_EMAIL=hiring@example.com
+# AI Configuration (Required)
+XAI_API_KEY=your_xai_api_key
 
-# AI Grader (if using separate worker)
+# Optional Variables
 AI_GRADER_WORKER_URL=https://ai-grader-worker.your-subdomain.workers.dev
+```
 
-# Gemini AI (if using)
-NEXT_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
+### Setting Secrets in Cloudflare
+
+```bash
+# Set required secrets
+wrangler secret put RESEND_API_KEY
+wrangler secret put RESEND_FROM_EMAIL
+wrangler secret put RESEND_TO_EMAIL
+wrangler secret put XAI_API_KEY
+
+# Set optional secrets
+wrangler secret put AI_GRADER_WORKER_URL
 ```
 
 ## 📁 Project Structure
@@ -95,6 +125,26 @@ This project has been migrated from Vercel to Cloudflare Workers for:
 - ✅ Better cost-effectiveness
 - ✅ Full Next.js feature support
 - ✅ Seamless D1 database integration
+
+## 🚀 Recent Improvements
+
+### Architecture Enhancements
+- **Modular Design**: Separated concerns into dedicated modules (`lib/config.ts`, `lib/db-utils.ts`, `lib/email-utils.ts`)
+- **AI Integration**: Enhanced Python grader with xAI API integration and fallback mechanisms
+- **Error Handling**: Comprehensive error handling with custom error classes
+- **Configuration Management**: Centralized configuration with validation
+
+### AI Grading System
+- **Modular Structure**: Split into `api_client.py`, `report_generator.py`, and `grader.py`
+- **xAI Integration**: Primary AI grading using xAI Grok API
+- **Fallback System**: Automatic fallback to basic grading when AI is unavailable
+- **Comprehensive Reports**: Detailed analysis with strengths, improvements, and hiring recommendations
+
+### Deployment Improvements
+- **Automated Scripts**: Deployment script with validation checks
+- **Health Monitoring**: `/api/health` endpoint for service monitoring
+- **Better Configuration**: Enhanced `wrangler.toml` with proper build settings
+- **Error Recovery**: Graceful handling of configuration and service failures
 
 ## 📝 License
 

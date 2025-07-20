@@ -37,7 +37,7 @@ export default function EmailSetupGuide() {
       link: null,
       code: `RESEND_API_KEY=re_your_api_key_here
 RESEND_FROM_EMAIL=onboarding@resend.dev
-NEXT_PUBLIC_HIRING_MANAGER_EMAIL=your-resend-account@email.com`,
+RESEND_TO_EMAIL=your-resend-account@email.com`,
     },
     {
       title: "Install Resend Package",
@@ -63,7 +63,7 @@ NEXT_PUBLIC_HIRING_MANAGER_EMAIL=your-resend-account@email.com`,
         <AlertTriangle className="h-4 w-4" />
         <AlertDescription>
           <strong>Important:</strong> Without a verified domain, Resend can only send emails to the email address you
-          used to create your Resend account. Make sure to set <code>NEXT_PUBLIC_HIRING_MANAGER_EMAIL</code> to your
+          used to create your Resend account. Make sure to set <code>RESEND_TO_EMAIL</code> to your
           Resend account email address.
         </AlertDescription>
       </Alert>
@@ -193,7 +193,7 @@ NEXT_PUBLIC_HIRING_MANAGER_EMAIL=your-resend-account@email.com`,
             <p className="text-sm font-medium">Quick Test Checklist:</p>
             <ul className="text-sm text-gray-600 space-y-1 ml-4">
               <li>• RESEND_API_KEY is set correctly</li>
-              <li>• NEXT_PUBLIC_HIRING_MANAGER_EMAIL matches your Resend account email</li>
+              <li>• RESEND_TO_EMAIL matches your Resend account email</li>
               <li>• Resend package is installed</li>
               <li>• API key has proper permissions</li>
               <li>• Check spam folder if email doesn't arrive</li>

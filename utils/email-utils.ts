@@ -1,5 +1,5 @@
 import { Resend } from "resend"
-import { getResendFromEmail, getHiringManagerEmail } from "@/lib/config"
+import { getResendConfig } from "@/lib/config"
 
 export interface EmailMetadata {
   to: string
@@ -18,8 +18,9 @@ export function getResendClient() {
 }
 
 export function prepareEmailData(to: string, subject: string, htmlContent: string, attachments?: any[]) {
+  const config = getResendConfig();
   return {
-    from: getResendFromEmail(),
+    from: config.fromEmail,
     to: [to],
     subject,
     html: htmlContent,
@@ -30,7 +31,11 @@ export function prepareEmailData(to: string, subject: string, htmlContent: strin
   }
 }
 
-export { getHiringManagerEmail }
+// Helper function to get the recipient email
+export function getRecipientEmail(): string {
+  const config = getResendConfig();
+  return config.toEmail;
+}
 
 // Function for downloading HTML reports (fixes the import error)
 export function downloadHTMLReport(htmlContent: string, filename = "exam-report.html") {

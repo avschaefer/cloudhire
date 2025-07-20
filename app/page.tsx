@@ -22,6 +22,11 @@ export interface UserBio {
   position: string
   experience: string
   motivation: string
+  education?: string
+  phone?: string
+  linkedIn?: string
+  resume?: string
+  transcript?: string
 }
 
 export interface ExamData {
@@ -121,8 +126,12 @@ export default function ExamApp() {
         />
       )}
 
-      {currentStep === "submission" && examResult && (
-        <SubmissionPage examResult={examResult} onBackToWelcome={handleBackToWelcome} />
+      {currentStep === "submission" && examResult && userBio && (
+        <SubmissionPage 
+          userBio={userBio}
+          examData={{ multipleChoice: {}, concepts: {}, calculations: {} }}
+          totalTimeSpent={examResult.timeSpent}
+        />
       )}
     </div>
   )
