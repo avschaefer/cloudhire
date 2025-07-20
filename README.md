@@ -72,36 +72,22 @@ If you encounter build failures:
 4. **Clean build**: Run `npm run clean` and rebuild
 5. **Check logs**: Use `wrangler tail` to monitor deployment logs
 
-## 🔧 Environment Variables
+## Supabase Setup
+- Create a Supabase project at supabase.com.
+- Note the project URL and anon key.
+- In Vercel dashboard, add Supabase integration or manually set `SUPABASE_URL` and `SUPABASE_ANON_KEY`.
+- Locally, add to .env file.
 
-### Required Variables
-Set these secrets in Cloudflare Workers:
+## Environment Variables
+Add these to Vercel and local .env:
+- SUPABASE_URL
+- SUPABASE_ANON_KEY
+- Existing: RESEND_API_KEY, etc.
 
-```bash
-# Resend Email Service (Required)
-RESEND_API_KEY=your_resend_api_key
-RESEND_FROM_EMAIL=your_verified_email
-RESEND_TO_EMAIL=recipient_email
-
-# AI Configuration (Required)
-XAI_API_KEY=your_xai_api_key
-
-# Optional Variables
-AI_GRADER_WORKER_URL=https://ai-grader-worker.your-subdomain.workers.dev
-```
-
-### Setting Secrets in Cloudflare
-
-```bash
-# Set required secrets
-wrangler secret put RESEND_API_KEY
-wrangler secret put RESEND_FROM_EMAIL
-wrangler secret put RESEND_TO_EMAIL
-wrangler secret put XAI_API_KEY
-
-# Set optional secrets
-wrangler secret put AI_GRADER_WORKER_URL
-```
+## Running Python with DB
+- Install dependencies: cd python; pip install -r requirements.txt
+- Set env vars including SUPABASE_URL and SUPABASE_ANON_KEY.
+- Run scripts like python grader.py
 
 ## 📁 Project Structure
 

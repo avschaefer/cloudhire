@@ -3,6 +3,8 @@ from typing import Dict, List, Any
 import os
 from api_client import XAIClient, XAIApiError
 from report_generator import ReportGenerator
+import requests
+from db_operations import get_user_answer, insert_grading_result
 
 def handler(request):
     """
@@ -176,6 +178,24 @@ def identify_improvements(answer_text: str, question: Dict[str, Any]) -> List[st
         improvements.append("Could share more specific experiences")
     
     return improvements
+
+def parse_response(response: dict) -> tuple[int, str]:
+    # Assume this parses the AI response to extract score and feedback
+    content = response['choices'][0]['message']['content']
+    # Simple parsing, adjust as needed
+    score_str, feedback = content.split(':', 1)
+    score = int(score_str.strip())
+    return score, feedback.strip()
+
+def grade_answer(answer_id: str):
+    client = create_supabase_client()  # If needed, but using db_operations
+    answer = get_user_answer(answer_id)
+    # AI call
+    response = requests.post('https://api.x.ai/v1/chat/completions', 
+                             headers={'Authorization': f'Bearer {os.environ["XAI_API_KEY"]}'},
+                             json={'model': 'grok-beta', 'messages': [{'role': 'user', 'content': f'Grade: {answer["answer_text"]}' }]})
+    score, feedback = parse_response(response.json())
+    insert_grading_result(answer_id, score, feedback)
 
 # For Cloudflare Workers
 def fetch(request):

@@ -2,6 +2,7 @@
 import json
 from typing import Dict, List, Any
 from datetime import datetime
+from db_operations import insert_report
 
 class ReportGenerator:
     """Generates comprehensive exam reports"""
@@ -38,7 +39,7 @@ class ReportGenerator:
         # Generate hiring recommendation
         hiring_recommendation = self._generate_hiring_recommendation(percentage, strengths, improvements)
         
-        return {
+        report = {
             'userInfo': user_info,
             'examMetadata': exam_metadata,
             'gradingResults': grading_results,
@@ -62,6 +63,11 @@ class ReportGenerator:
             },
             'generatedAt': datetime.now().isoformat()
         }
+        # Insert to DB
+        report_content = json.dumps(report)
+        report_id = insert_report(user_info['userId'], report_content)
+        report['id'] = report_id
+        return report
     
     def _generate_overall_feedback(self, percentage: float, grading_results: List[Dict[str, Any]], user_info: Dict[str, Any]) -> str:
         """Generate overall feedback based on performance"""
