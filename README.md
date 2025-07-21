@@ -30,7 +30,7 @@ This application is deployed on **Cloudflare Workers** using OpenNext for optima
 
 ### Local Development
 
-```bash
+\`\`\`bash
 # Clone the repository
 git clone https://github.com/avschaefer/cloudhire.git
 cd cloudhire
@@ -40,11 +40,11 @@ npm install
 
 # Start development server
 npm run dev
-```
+\`\`\`
 
 ### Build and Deploy
 
-```bash
+\`\`\`bash
 # Test configuration
 npm run test:config
 npm run test:email
@@ -60,7 +60,7 @@ npm run deploy:preview
 
 # Local development with Workers
 npm run preview
-```
+\`\`\`
 
 ### Troubleshooting
 
@@ -91,7 +91,7 @@ Add these to Vercel and local .env:
 
 ## 📁 Project Structure
 
-```
+\`\`\`
 cloudhire/
 ├── app/                    # Next.js app directory
 │   ├── api/               # API routes
@@ -102,7 +102,7 @@ cloudhire/
 ├── migrations/            # D1 database migrations
 ├── python/                # Python AI grader
 └── public/                # Static assets
-```
+\`\`\`
 
 ## 🔄 Migration from Vercel
 

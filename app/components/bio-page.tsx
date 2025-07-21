@@ -1,15 +1,13 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { User, Mail, Briefcase, Clock, Target } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { User, Briefcase, GraduationCap, FileText, Upload } from "lucide-react"
 
 export interface UserBio {
   firstName: string
@@ -18,6 +16,10 @@ export interface UserBio {
   position: string
   experience: string
   motivation: string
+  educationalDegree: string
+  resume?: File
+  transcript?: File
+  projects?: File
 }
 
 interface BioPageProps {
@@ -33,14 +35,41 @@ export default function BioPage({ onNext, userBio }: BioPageProps) {
     position: userBio.position || "",
     experience: userBio.experience || "",
     motivation: userBio.motivation || "",
+    educationalDegree: userBio.educationalDegree || "",
+    resume: userBio.resume,
+    transcript: userBio.transcript,
+    projects: userBio.projects,
   })
 
   const [errors, setErrors] = useState<Partial<UserBio>>({})
+  const [uploadErrors, setUploadErrors] = useState<{ resume?: string; transcript?: string; projects?: string }>({})
+
+  const resumeInputRef = useRef<HTMLInputElement>(null)
+  const transcriptInputRef = useRef<HTMLInputElement>(null)
+  const projectsInputRef = useRef<HTMLInputElement>(null)
 
   const handleInputChange = (field: keyof UserBio, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }))
+    }
+  }
+
+  const handleFileUpload = (field: "resume" | "transcript" | "projects", file: File | null) => {
+    if (file) {
+      if (file.type !== "application/pdf") {
+        setUploadErrors((prev) => ({ ...prev, [field]: "Please upload a PDF file only" }))
+        return
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        // 10MB limit
+        setUploadErrors((prev) => ({ ...prev, [field]: "File size must be less than 10MB" }))
+        return
+      }
+      setUploadErrors((prev) => ({ ...prev, [field]: "" }))
+      setFormData((prev) => ({ ...prev, [field]: file }))
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: undefined }))
     }
   }
 
@@ -54,8 +83,7 @@ export default function BioPage({ onNext, userBio }: BioPageProps) {
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = "Please enter a valid email address"
     }
-    if (!formData.position.trim()) newErrors.position = "Position is required"
-    if (!formData.experience) newErrors.experience = "Experience level is required"
+    if (!formData.educationalDegree.trim()) newErrors.educationalDegree = "Educational degree is required"
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -77,25 +105,20 @@ export default function BioPage({ onNext, userBio }: BioPageProps) {
               <User className="w-4 h-4" />
               Personal Information
             </div>
+            
             <h1 className="text-3xl font-bold text-gray-900 mb-4">Tell Us About Yourself</h1>
-            <p className="text-lg text-gray-600">
-              Please provide some basic information to personalize your assessment experience.
-            </p>
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle>Personal & Professional Details</CardTitle>
+              <CardTitle>Personal Information</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Name Fields */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="firstName" className="flex items-center gap-2">
-                      <User className="w-4 h-4" />
-                      First Name *
-                    </Label>
+                    <Label htmlFor="firstName">First Name</Label>
                     <Input
                       id="firstName"
                       type="text"
@@ -108,10 +131,7 @@ export default function BioPage({ onNext, userBio }: BioPageProps) {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="lastName" className="flex items-center gap-2">
-                      <User className="w-4 h-4" />
-                      Last Name *
-                    </Label>
+                    <Label htmlFor="lastName">Last Name</Label>
                     <Input
                       id="lastName"
                       type="text"
@@ -126,10 +146,7 @@ export default function BioPage({ onNext, userBio }: BioPageProps) {
 
                 {/* Email */}
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="flex items-center gap-2">
-                    <Mail className="w-4 h-4" />
-                    Email Address *
-                  </Label>
+                  <Label htmlFor="email">Email Address</Label>
                   <Input
                     id="email"
                     type="email"
@@ -141,59 +158,173 @@ export default function BioPage({ onNext, userBio }: BioPageProps) {
                   {errors.email && <p className="text-sm text-red-600">{errors.email}</p>}
                 </div>
 
-                {/* Position */}
+                {/* Educational Degree */}
                 <div className="space-y-2">
-                  <Label htmlFor="position" className="flex items-center gap-2">
-                    <Briefcase className="w-4 h-4" />
-                    Position Applied For *
-                  </Label>
+                  <Label htmlFor="educationalDegree">Educational Degree(s)</Label>
                   <Input
-                    id="position"
+                    id="educationalDegree"
                     type="text"
-                    value={formData.position}
-                    onChange={(e) => handleInputChange("position", e.target.value)}
-                    placeholder="e.g., Senior Software Engineer, DevOps Engineer"
-                    className={errors.position ? "border-red-500" : ""}
+                    value={formData.educationalDegree}
+                    onChange={(e) => handleInputChange("educationalDegree", e.target.value)}
+                    placeholder="e.g., B.S Mechanical Engineering"
+                    className={errors.educationalDegree ? "border-red-500" : ""}
                   />
-                  {errors.position && <p className="text-sm text-red-600">{errors.position}</p>}
+                  {errors.educationalDegree && <p className="text-sm text-red-600">{errors.educationalDegree}</p>}
                 </div>
 
-                {/* Experience Level */}
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    Years of Experience *
-                  </Label>
-                  <Select value={formData.experience} onValueChange={(value) => handleInputChange("experience", value)}>
-                    <SelectTrigger className={errors.experience ? "border-red-500" : ""}>
-                      <SelectValue placeholder="Select your experience level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0-1">0-1 years (Entry Level)</SelectItem>
-                      <SelectItem value="2-3">2-3 years (Junior)</SelectItem>
-                      <SelectItem value="4-6">4-6 years (Mid-Level)</SelectItem>
-                      <SelectItem value="7-10">7-10 years (Senior)</SelectItem>
-                      <SelectItem value="10+">10+ years (Expert/Lead)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.experience && <p className="text-sm text-red-600">{errors.experience}</p>}
-                </div>
+                {/* Document Upload Section */}
+                <div className="pt-6 border-t">
+                  <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
+                    <Upload className="w-5 h-5" />
+                    Document Upload (pdfs)
+                  </h3>
 
-                {/* Motivation */}
-                <div className="space-y-2">
-                  <Label htmlFor="motivation" className="flex items-center gap-2">
-                    <Target className="w-4 h-4" />
-                    What motivates you in this role? (Optional)
-                  </Label>
-                  <Textarea
-                    id="motivation"
-                    value={formData.motivation}
-                    onChange={(e) => handleInputChange("motivation", e.target.value)}
-                    placeholder="Tell us what excites you about this opportunity..."
-                    rows={4}
-                    className="resize-none"
-                  />
-                  <p className="text-xs text-gray-500">{formData.motivation.length}/500 characters</p>
+                  <div className="space-y-6">
+                    {/* Resume and Transcript Row */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Resume Upload */}
+                      <div className="space-y-2">
+                        <Label htmlFor="resume" className="flex items-center gap-2">
+                          <FileText className="w-4 h-4" />
+                          Resume
+                        </Label>
+                        <div className="space-y-2">
+                          <Input
+                            ref={resumeInputRef}
+                            id="resume"
+                            type="file"
+                            accept=".pdf"
+                            onChange={(e) => handleFileUpload("resume", e.target.files?.[0] || null)}
+                            className="hidden"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => resumeInputRef.current?.click()}
+                            className="w-full flex items-center gap-2"
+                          >
+                            <Upload className="w-4 h-4" />
+                            {formData.resume ? "Change Resume" : "Upload Resume"}
+                          </Button>
+                          {formData.resume && (
+                            <div className="flex items-center gap-2">
+                              <Badge variant="secondary" className="text-xs">
+                                {formData.resume.name}
+                              </Badge>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  handleFileUpload("resume", null)
+                                  if (resumeInputRef.current) resumeInputRef.current.value = ""
+                                }}
+                                className="text-xs"
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                          )}
+                          {uploadErrors.resume && <p className="text-sm text-red-600">{uploadErrors.resume}</p>}
+                        </div>
+                      </div>
+
+                      {/* Transcript Upload */}
+                      <div className="space-y-2">
+                        <Label htmlFor="transcript" className="flex items-center gap-2">
+                          <GraduationCap className="w-4 h-4" />
+                          Transcript
+                        </Label>
+                        <div className="space-y-2">
+                          <Input
+                            ref={transcriptInputRef}
+                            id="transcript"
+                            type="file"
+                            accept=".pdf"
+                            onChange={(e) => handleFileUpload("transcript", e.target.files?.[0] || null)}
+                            className="hidden"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => transcriptInputRef.current?.click()}
+                            className="w-full flex items-center gap-2"
+                          >
+                            <Upload className="w-4 h-4" />
+                            {formData.transcript ? "Change Transcript" : "Upload Transcript"}
+                          </Button>
+                          {formData.transcript && (
+                            <div className="flex items-center gap-2">
+                              <Badge variant="secondary" className="text-xs">
+                                {formData.transcript.name}
+                              </Badge>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  handleFileUpload("transcript", null)
+                                  if (transcriptInputRef.current) transcriptInputRef.current.value = ""
+                                }}
+                                className="text-xs"
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                          )}
+                          {uploadErrors.transcript && <p className="text-sm text-red-600">{uploadErrors.transcript}</p>}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Projects Upload */}
+                    <div className="space-y-2">
+                      <Label htmlFor="projects" className="flex items-center gap-2">
+                        <Briefcase className="w-4 h-4" />
+                        Projects
+                      </Label>
+                      <div className="space-y-2">
+                        <Input
+                          ref={projectsInputRef}
+                          id="projects"
+                          type="file"
+                          accept=".pdf"
+                          onChange={(e) => handleFileUpload("projects", e.target.files?.[0] || null)}
+                          className="hidden"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => projectsInputRef.current?.click()}
+                          className="w-full flex items-center gap-2"
+                        >
+                          <Upload className="w-4 h-4" />
+                          {formData.projects ? "Change Projects" : "Upload Projects"}
+                        </Button>
+                        {formData.projects && (
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="text-xs">
+                              {formData.projects.name}
+                            </Badge>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                handleFileUpload("projects", null)
+                                if (projectsInputRef.current) projectsInputRef.current.value = ""
+                              }}
+                              className="text-xs"
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        )}
+                        {uploadErrors.projects && <p className="text-sm text-red-600">{uploadErrors.projects}</p>}
+                        <p className="text-xs text-gray-500">PDF format only, max 10MB</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Submit Button */}

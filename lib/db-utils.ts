@@ -206,4 +206,4 @@ export async function checkDatabaseHealth(env: any): Promise<boolean> {
     console.error('Database health check failed:', error);
     return false;
   }
-} 
+}

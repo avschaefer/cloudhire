@@ -29,4 +29,4 @@ def insert_report(user_id: str, content: str):
     response = client.table('Report').insert(data).execute()
     if hasattr(response, 'error') and response.error:
         raise Exception(f'Insert failed: {response.error}')
-    return response.data[0]['id'] 
+    return response.data[0]['id']

@@ -6,4 +6,4 @@ def create_supabase_client() -> Client:
     key = os.environ.get('SUPABASE_ANON_KEY')
     if not url or not key:
         raise ValueError('Missing Supabase credentials')
-    return create_client(url, key) 
+    return create_client(url, key)

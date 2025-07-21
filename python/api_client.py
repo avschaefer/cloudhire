@@ -213,4 +213,4 @@ Be thorough and fair in your evaluation."""
             "feedback": feedback,
             "strengths": ["Response provided"],
             "improvements": ["AI grading unavailable - manual review recommended"]
-        } 
+        }

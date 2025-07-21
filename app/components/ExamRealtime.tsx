@@ -15,4 +15,4 @@ export default function ExamRealtime({ userId }: { userId: string }) {
   }, [userId]);
   // Render updates in UI
   return <div>{/* Display real-time answers/grading */}</div>;
-} 
+}

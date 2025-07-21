@@ -3,10 +3,11 @@
 import { useState } from "react"
 import WelcomePage from "./components/welcome-page"
 import BioPage from "./components/bio-page"
+import BehavioralPage from "./components/behavioral-page"
 import ExamPage from "./components/exam-page"
 import SubmissionPage from "./components/submission-page"
+import type { BehavioralAnswers } from "./components/behavioral-page"
 
-// Define a minimal Question interface, even if unused for now
 export interface Question {
   ID: string
   question: string
@@ -22,11 +23,10 @@ export interface UserBio {
   position: string
   experience: string
   motivation: string
-  education?: string
-  phone?: string
-  linkedIn?: string
-  resume?: string
-  transcript?: string
+  educationalDegree: string
+  resume?: File
+  transcript?: File
+  projects?: File
 }
 
 export interface ExamData {
@@ -37,102 +37,111 @@ export interface ExamData {
 
 export interface ExamResult {
   userBio: UserBio
-  answers: any[] // Simplified for now
+  behavioralAnswers: BehavioralAnswers
+  answers: any[]
   totalScore: number
   maxScore: number
   completedAt: string
   timeSpent: number
 }
 
-type ExamStep = "welcome" | "bio" | "exam" | "submission"
+type Step = "welcome" | "bio" | "behavioral" | "exam" | "submission"
+
+const initialBio: UserBio = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  position: "",
+  experience: "",
+  motivation: "",
+  educationalDegree: "",
+}
 
 export default function ExamApp() {
-  const [currentStep, setCurrentStep] = useState<ExamStep>("welcome")
+  const [step, setStep] = useState<Step>("welcome")
   const [userBio, setUserBio] = useState<UserBio | null>(null)
-  // Initialize with an empty array of questions
-  const [questions, setQuestions] = useState<Question[]>([])
+  const [behavioralAnswers, setBehavioralAnswers] = useState<BehavioralAnswers>({})
+  const [questions] = useState<Question[]>([])
   const [examResult, setExamResult] = useState<ExamResult | null>(null)
   const [loading, setLoading] = useState(false)
 
-  const handleWelcomeComplete = () => {
-    // No questions to load, just move to the next step
-    setCurrentStep("bio")
-  }
-
-  const handleBioComplete = (bio: UserBio) => {
+  const handleBioNext = (bio: UserBio) => {
     setUserBio(bio)
-    setCurrentStep("exam")
+    setStep("behavioral")
   }
 
-  const handleExamComplete = async (examData: ExamData, timeSpent: number) => {
+  const handleBehavioralNext = (answers: BehavioralAnswers) => {
+    setBehavioralAnswers(answers)
+    setStep("exam")
+  }
+
+  const handleExamComplete = async (_exam: ExamData, timeSpent: number) => {
     if (!userBio) return
 
     setLoading(true)
-
     try {
       const result: ExamResult = {
         userBio,
-        answers: [], // No answers since there are no questions
+        behavioralAnswers,
+        answers: [],
         totalScore: 0,
         maxScore: 0,
         completedAt: new Date().toISOString(),
         timeSpent,
       }
-
       setExamResult(result)
-      setCurrentStep("submission")
-    } catch (error) {
-      console.error("Error processing exam:", error)
+      setStep("submission")
     } finally {
       setLoading(false)
     }
   }
 
-  const handleBackToWelcome = () => {
-    setCurrentStep("welcome")
-    setUserBio(null)
-    setQuestions([])
-    setExamResult(null)
-  }
-
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-lg">Processing your exam...</p>
+          <div className="mx-auto h-32 w-32 animate-spin rounded-full border-b-2 border-blue-600" />
+          <p className="mt-4 text-lg">Processing results…</p>
         </div>
       </div>
     )
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {currentStep === "welcome" && <WelcomePage onNext={handleWelcomeComplete} />}
+  const renderStep = () => {
+    switch (step) {
+      case "welcome":
+        return <WelcomePage onNext={() => setStep("bio")} />
+      case "bio":
+        return <BioPage onNext={handleBioNext} userBio={userBio ?? initialBio} />
+      case "behavioral":
+        return <BehavioralPage onNext={handleBehavioralNext} />
+      case "exam":
+        if (userBio) {
+          return (
+            <ExamPage
+              initialExamData={{ multipleChoice: {}, concepts: {}, calculations: {} }}
+              userBio={userBio}
+              questions={questions}
+              onComplete={handleExamComplete}
+            />
+          )
+        }
+        return null
+      case "submission":
+        if (examResult) {
+          return (
+            <SubmissionPage
+              userBio={examResult.userBio}
+              examData={{ multipleChoice: {}, concepts: {}, calculations: {} }}
+              totalTimeSpent={examResult.timeSpent}
+            />
+          )
+        }
+        return null
+      default:
+        return null
+    }
+  }
 
-      {currentStep === "bio" && (
-        <BioPage
-          onNext={handleBioComplete}
-          userBio={userBio || { firstName: "", lastName: "", email: "", position: "", experience: "", motivation: "" }}
-        />
-      )}
-
-      {currentStep === "exam" && userBio && (
-        <ExamPage
-          initialExamData={{ multipleChoice: {}, concepts: {}, calculations: {} }}
-          userBio={userBio}
-          onComplete={handleExamComplete}
-          questions={questions} // Pass the empty questions array
-        />
-      )}
-
-      {currentStep === "submission" && examResult && userBio && (
-        <SubmissionPage 
-          userBio={userBio}
-          examData={{ multipleChoice: {}, concepts: {}, calculations: {} }}
-          totalTimeSpent={examResult.timeSpent}
-        />
-      )}
-    </div>
-  )
+  return <div className="min-h-screen bg-gray-50">{renderStep()}</div>
 }

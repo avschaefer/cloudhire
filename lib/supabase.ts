@@ -7,4 +7,4 @@ export function createSupabaseClient() {
     throw new Error('Missing Supabase credentials');
   }
   return createClient(url, key);
-} 
+}

@@ -4,4 +4,4 @@ export async function gradeExam(data) {
     method: 'POST',
     body: JSON.stringify(data)
   });
-} 
+}

@@ -14,4 +14,4 @@ export async function POST(request: Request) {
   const { data, error } = await supabase.from('GradingResult').insert(body);
   if (error) return NextResponse.json({ error }, { status: 500 });
   return NextResponse.json(data);
-} 
+}

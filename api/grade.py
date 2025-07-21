@@ -10,4 +10,4 @@ class handler(BaseHTTPRequestHandler):
         # ... existing AI logic ...
         self.send_response(200)
         self.end_headers()
-        self.wfile.write(b'{"score": 85}')  # Example 
+        self.wfile.write(b'{"score": 85}')  # Example

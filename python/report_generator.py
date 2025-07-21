@@ -270,4 +270,4 @@ class ReportGenerator:
             </div>
         </body>
         </html>
-        """ 
+        """
