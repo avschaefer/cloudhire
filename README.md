@@ -89,6 +89,12 @@ Add these to Vercel and local .env:
 - Set env vars including SUPABASE_URL and SUPABASE_ANON_KEY.
 - Run scripts like python grader.py
 
+## Database
+- Supabase with Prisma for schema management.
+- Tables: Question, UserAnswer, GradingResult, Report.
+- Manual updates to Question table via Supabase dashboard (Table Editor).
+- Use `/lib/supabase.ts` (JS/TS) and `/python/db_client.py` (Python) for DB access.
+
 ## 📁 Project Structure
 
 \`\`\`

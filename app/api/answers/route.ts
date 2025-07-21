@@ -10,8 +10,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const supabase = createSupabaseClient();
-  const body = await request.json();
-  const { data, error } = await supabase.from('UserAnswer').insert(body);
+  const { userId, questionId, answerText } = await request.json();
+  const { data, error } = await supabase.from('UserAnswer').insert({ userId, questionId, answerText }).select();
   if (error) return NextResponse.json({ error }, { status: 500 });
   return NextResponse.json(data);
 }

@@ -21,7 +21,7 @@ def insert_grading_result(answer_id: str, score: int, feedback: str):
     response = client.table('GradingResult').insert(data).execute()
     if hasattr(response, 'error') and response.error:
         raise Exception(f'Insert failed: {response.error}')
-    return response.data[0]['id']
+    return response.data
 
 def insert_report(user_id: str, content: str):
     client = create_supabase_client()
