@@ -292,62 +292,7 @@ function analyzeExamPerformance(examData: ExamData) {
   }
 }
 
+// Remove hardcoded questions, as they are now fetched from Supabase
 function getQuestionAnalysis(examData: ExamData): QuestionAnalysis[] {
-  const questions: QuestionAnalysis[] = []
-
-  // Multiple Choice Questions
-  questions.push({
-    id: "mc-q1",
-    question: "Which of the following materials has the highest tensile strength?",
-    candidateAnswer: examData.multipleChoice["mc-q1"] || "",
-    isCorrect: examData.multipleChoice["mc-q1"] === "Carbon Fiber",
-    correctAnswer: "Carbon Fiber",
-    section: "multipleChoice",
-    difficulty: 1,
-    options: ["Structural Steel", "Titanium Alloy", "Carbon Fiber", "Aluminum 6061"],
-  })
-
-  questions.push({
-    id: "mc-q2",
-    question: "What does the 'E' in Young's Modulus (E) represent?",
-    candidateAnswer: examData.multipleChoice["mc-q2"] || "",
-    isCorrect: examData.multipleChoice["mc-q2"] === "Elasticity",
-    correctAnswer: "Elasticity",
-    section: "multipleChoice",
-    difficulty: 1,
-    options: ["Elasticity", "Elongation", "Energy", "Entropy"],
-  })
-
-  // Concept Questions
-  questions.push({
-    id: "concept-q1",
-    question: "Explain the concept of Factor of Safety (FOS) in mechanical design and why it is important.",
-    candidateAnswer: examData.concepts["concept-q1"] || "",
-    isCorrect: false, // Subjective, requires manual review
-    section: "concepts",
-    difficulty: 2,
-  })
-
-  questions.push({
-    id: "concept-q2",
-    question: "What is the primary difference between fatigue and static failure in a material?",
-    candidateAnswer: examData.concepts["concept-q2"] || "",
-    isCorrect: false, // Subjective, requires manual review
-    section: "concepts",
-    difficulty: 2,
-  })
-
-  // Calculation Question
-  questions.push({
-    id: "calc-q1",
-    question:
-      "A steel beam with a cross-sectional area of 0.5 m² is subjected to a tensile force of 500 kN. Calculate the stress in the beam in megapascals (MPa).",
-    candidateAnswer: examData.calculations["calc-q1"] || "",
-    isCorrect: examData.calculations["calc-q1"] === "1" || examData.calculations["calc-q1"] === "1.0",
-    correctAnswer: "1.0 MPa (Stress = Force/Area = 500,000 N / 0.5 m² = 1,000,000 Pa = 1.0 MPa)",
-    section: "calculations",
-    difficulty: 2,
-  })
-
-  return questions
+  return []; // Implement dynamic fetching if needed
 }

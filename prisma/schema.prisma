@@ -13,78 +13,70 @@ datasource db {
   url      = env("SUPABASE_URL")
 }
 
-model user_bio {
-  id                BigInt         @id @default(autoincrement())
-  created_at        DateTime       @default(now()) @db.Timestamptz()
+model user_info {
+  id                String   @id @default(uuid())
+  created_at        DateTime @default(now()) @db.Timestamptz()
   first_name        String?
   last_name         String?
   email             String?
-  position           String?
-  motivation         String?
-  educational_degree String?
-  experience         String?
-  behavioral        behavioral[]  
-  calculations      calculations[]
-  multiple_choice   multiple_choice[]
-  response          response[]
+  degree_type       String?
+  degree_name       String?
+  years_experience  String?
   user_files        user_files[]
-}
-
-model behavioral {
-  id            BigInt     @id @default(autoincrement())
-  created_at    DateTime   @default(now()) @db.Timestamptz()
-  question      String?
-  user_response String?
-  ai_response   String?
-  user_id       BigInt?
-  user          user_bio?  @relation(fields: [user_id], references: [id])
-}
-
-model calculations {
-  id                      BigInt     @id @default(autoincrement())
-  created_at              DateTime   @default(now()) @db.Timestamptz()
-  question                String?
-  answer_numerical        Float?
-  user_response_numerical Float?
-  user_response_text      String?
-  answer_explanation      String?
-  ai_response             String?
-  user_id                 BigInt?
-  user                    user_bio?  @relation(fields: [user_id], references: [id])
-}
-
-model multiple_choice {
-  id              BigInt     @id @default(autoincrement())
-  created_at      DateTime   @default(now()) @db.Timestamptz()
-  question        String?
-  option_a        String?
-  option_b        String?
-  option_c        String?
-  option_d        String?
-  user_response   String?
-  correct_answer  String?
-  ai_response     String?
-  user_id         BigInt?
-  user            user_bio?  @relation(fields: [user_id], references: [id])
-}
-
-model response {
-  id            BigInt     @id @default(autoincrement())
-  created_at    DateTime   @default(now()) @db.Timestamptz()
-  question      String?
-  user_response String?
-  ai_response   String?
-  user_id       BigInt?
-  user          user_bio?  @relation(fields: [user_id], references: [id])
+  user_responses    user_responses[]
 }
 
 model user_files {
-  id          BigInt     @id @default(autoincrement())
-  created_at  DateTime   @default(now()) @db.Timestamptz()
-  user_id     BigInt
-  file_type   String
-  file_name   String
-  bucket_name String
-  file_path   String
-  user        user_bio   @relation(fields: [user_id], references: [id])
+  id            BigInt   @id @default(autoincrement())
+  created_at    DateTime @default(now()) @db.Timestamptz()
+  user_id       String
+  file_type     String
+  file_name     String
+  bucket_name   String
+  file_path     String
+  user          user_info @relation(fields: [user_id], references: [id])
+}
+
+model questions_multiple_choice {
+  id             BigInt   @id @default(autoincrement())
+  created_at     DateTime @default(now()) @db.Timestamptz()
+  question       String?
+  option_a       String?
+  option_b       String?
+  option_c       String?
+  option_d       String?
+  correct_answer String?
+}
+
+model questions_calculations {
+  id                 BigInt   @id @default(autoincrement())
+  created_at         DateTime @default(now()) @db.Timestamptz()
+  question           String?
+  answer_numerical   Float?
+  answer_explanation String?
+}
+
+model questions_behavioral {
+  id         BigInt   @id @default(autoincrement())
+  created_at DateTime @default(now()) @db.Timestamptz()
+  question   String?
+}
+
+model questions_response {
+  id         BigInt   @id @default(autoincrement())
+  created_at DateTime @default(now()) @db.Timestamptz()
+  question   String?
+}
+
+model user_responses {
+  id                 BigInt   @id @default(autoincrement())
+  created_at         DateTime @default(now()) @db.Timestamptz()
+  user_id            String
+  question_type      String
+  question_id        BigInt
+  response_text      String?
+  response_numerical Float?
+  ai_feedback        String?
+  is_correct         Boolean?
+  user               user_info @relation(fields: [user_id], references: [id])
 }

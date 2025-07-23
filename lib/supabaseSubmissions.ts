@@ -1,62 +1,27 @@
 import { supabase } from './supabase';
 
-export async function submitBehavioralResponse({ questionId, userResponse, aiResponse, userId }: { questionId: number, userResponse: string, aiResponse: string, userId: number }) {
+export async function submitUserInfo({ firstName, lastName, email, degreeType, degreeName, yearsExperience }: { firstName: string, lastName: string, email: string, degreeType: string, degreeName: string, yearsExperience: string }) {
   const { data, error } = await supabase
-    .from('behavioral')
-    .update({ user_response: userResponse, ai_response: aiResponse })
-    .eq('id', questionId)
-    .eq('user_id', userId);
-
-  if (error) throw new Error(`Error submitting behavioral response: ${error.message}`);
-  return data;
-}
-
-export async function submitCalculationResponse({ questionId, userResponseNumerical, userResponseText, aiResponse, userId }: { questionId: number, userResponseNumerical: number, userResponseText: string, aiResponse: string, userId: number }) {
-  const { data, error } = await supabase
-    .from('calculations')
-    .update({ 
-      user_response_numerical: userResponseNumerical, 
-      user_response_text: userResponseText, 
-      ai_response: aiResponse 
-    })
-    .eq('id', questionId)
-    .eq('user_id', userId);
-
-  if (error) throw new Error(`Error submitting calculation response: ${error.message}`);
-  return data;
-}
-
-export async function submitMultipleChoiceResponse({ questionId, userResponse, aiResponse, userId }: { questionId: number, userResponse: string, aiResponse: string, userId: number }) {
-  const { data, error } = await supabase
-    .from('multiple_choice')
-    .update({ user_response: userResponse, ai_response: aiResponse })
-    .eq('id', questionId)
-    .eq('user_id', userId);
-
-  if (error) throw new Error(`Error submitting multiple choice response: ${error.message}`);
-  return data;
-}
-
-export async function submitGeneralResponse({ questionId, userResponse, aiResponse, userId }: { questionId: number, userResponse: string, aiResponse: string, userId: number }) {
-  const { data, error } = await supabase
-    .from('response')
-    .update({ user_response: userResponse, ai_response: aiResponse })
-    .eq('id', questionId)
-    .eq('user_id', userId);
-
-  if (error) throw new Error(`Error submitting general response: ${error.message}`);
-  return data;
-}
-
-export async function submitUserBio({ firstName, lastName, email, position, motivation, educationalDegree, experience }: { firstName: string, lastName: string, email: string, position: string, motivation: string, educationalDegree: string, experience: string }) {
-  const { data, error } = await supabase
-    .from('user_bio')
-    .insert([
-      { first_name: firstName, last_name: lastName, email, position, motivation, educational_degree: educationalDegree, experience }
-    ])
+    .from('user_info')
+    .insert([{ first_name: firstName, last_name: lastName, email, degree_type: degreeType, degree_name: degreeName, years_experience: yearsExperience }])
     .select('id')
     .single();
-
-  if (error) throw new Error(`Error submitting user bio: ${error.message}`);
+  if (error) throw new Error(`Error submitting user info: ${error.message}`);
   return data.id;
+}
+
+export async function submitFileMetadata({ userId, fileType, fileName, bucketName, filePath }: { userId: string, fileType: string, fileName: string, bucketName: string, filePath: string }) {
+  const { data, error } = await supabase
+    .from('user_files')
+    .insert([{ user_id: userId, file_type: fileType, file_name: fileName, bucket_name: bucketName, file_path: filePath }]);
+  if (error) throw new Error(`Error submitting file metadata: ${error.message}`);
+  return data;
+}
+
+export async function submitUserResponse({ userId, questionType, questionId, responseText, responseNumerical, aiFeedback, isCorrect }: { userId: string, questionType: string, questionId: number, responseText?: string, responseNumerical?: number, aiFeedback?: string, isCorrect?: boolean }) {
+  const { data, error } = await supabase
+    .from('user_responses')
+    .insert([{ user_id: userId, question_type: questionType, question_id: questionId, response_text: responseText, response_numerical: responseNumerical, ai_feedback: aiFeedback, is_correct: isCorrect }]);
+  if (error) throw new Error(`Error submitting user response: ${error.message}`);
+  return data;
 } 

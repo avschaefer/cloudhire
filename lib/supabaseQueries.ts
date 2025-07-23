@@ -1,41 +1,47 @@
 import { supabase } from './supabase';
 
-export async function fetchBehavioralQuestions() {
+export async function fetchUserInfo(userId: string) {
   const { data, error } = await supabase
-    .from('behavioral')
-    .select('id, question')
-    .order('id', { ascending: true });
-  
-  if (error) throw new Error(`Error fetching behavioral questions: ${error.message}`);
-  return data;
-}
-
-export async function fetchCalculationQuestions() {
-  const { data, error } = await supabase
-    .from('calculations')
-    .select('id, question, answer_numerical, answer_explanation')
-    .order('id', { ascending: true });
-  
-  if (error) throw new Error(`Error fetching calculation questions: ${error.message}`);
+    .from('user_info')
+    .select('*')
+    .eq('id', userId)
+    .single();
+  if (error) throw new Error(`Error fetching user info: ${error.message}`);
   return data;
 }
 
 export async function fetchMultipleChoiceQuestions() {
   const { data, error } = await supabase
-    .from('multiple_choice')
-    .select('id, question, option_a, option_b, option_c, option_d, correct_answer')
+    .from('questions_multiple_choice')
+    .select('*')
     .order('id', { ascending: true });
-  
   if (error) throw new Error(`Error fetching multiple choice questions: ${error.message}`);
+  return data;
+}
+
+export async function fetchCalculationQuestions() {
+  const { data, error } = await supabase
+    .from('questions_calculations')
+    .select('*')
+    .order('id', { ascending: true });
+  if (error) throw new Error(`Error fetching calculation questions: ${error.message}`);
+  return data;
+}
+
+export async function fetchBehavioralQuestions() {
+  const { data, error } = await supabase
+    .from('questions_behavioral')
+    .select('*')
+    .order('id', { ascending: true });
+  if (error) throw new Error(`Error fetching behavioral questions: ${error.message}`);
   return data;
 }
 
 export async function fetchResponseQuestions() {
   const { data, error } = await supabase
-    .from('response')
-    .select('id, question')
+    .from('questions_response')
+    .select('*')
     .order('id', { ascending: true });
-  
   if (error) throw new Error(`Error fetching response questions: ${error.message}`);
   return data;
 } 
