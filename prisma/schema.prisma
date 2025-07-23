@@ -13,36 +13,78 @@ datasource db {
   url      = env("SUPABASE_URL")
 }
 
-model Question {
-  id        String   @id @default(uuid())
-  text      String
-  metadata  Json?    // e.g., {"difficulty": "medium", "tags": ["next.js"]}
-  createdAt DateTime @default(now())
-  answers   UserAnswer[]
+model user_bio {
+  id                BigInt         @id @default(autoincrement())
+  created_at        DateTime       @default(now()) @db.Timestamptz()
+  first_name        String?
+  last_name         String?
+  email             String?
+  position           String?
+  motivation         String?
+  educational_degree String?
+  experience         String?
+  behavioral        behavioral[]  
+  calculations      calculations[]
+  multiple_choice   multiple_choice[]
+  response          response[]
+  user_files        user_files[]
 }
 
-model UserAnswer {
-  id         String          @id @default(uuid())
-  userId     String          // Tie to Supabase auth.users if auth enabled
-  questionId String
-  answerText String
-  timestamp  DateTime        @default(now())
-  question   Question        @relation(fields: [questionId], references: [id])
-  grading    GradingResult[]
+model behavioral {
+  id            BigInt     @id @default(autoincrement())
+  created_at    DateTime   @default(now()) @db.Timestamptz()
+  question      String?
+  user_response String?
+  ai_response   String?
+  user_id       BigInt?
+  user          user_bio?  @relation(fields: [user_id], references: [id])
 }
 
-model GradingResult {
-  id       String     @id @default(uuid())
-  answerId String
-  score    Int
-  feedback String
-  gradedAt DateTime   @default(now())
-  answer   UserAnswer @relation(fields: [answerId], references: [id])
+model calculations {
+  id                      BigInt     @id @default(autoincrement())
+  created_at              DateTime   @default(now()) @db.Timestamptz()
+  question                String?
+  answer_numerical        Float?
+  user_response_numerical Float?
+  user_response_text      String?
+  answer_explanation      String?
+  ai_response             String?
+  user_id                 BigInt?
+  user                    user_bio?  @relation(fields: [user_id], references: [id])
 }
 
-model Report {
-  id            String   @id @default(uuid())
-  userId        String
-  content       String   // AI-generated report text
-  generatedAt   DateTime @default(now())
+model multiple_choice {
+  id              BigInt     @id @default(autoincrement())
+  created_at      DateTime   @default(now()) @db.Timestamptz()
+  question        String?
+  option_a        String?
+  option_b        String?
+  option_c        String?
+  option_d        String?
+  user_response   String?
+  correct_answer  String?
+  ai_response     String?
+  user_id         BigInt?
+  user            user_bio?  @relation(fields: [user_id], references: [id])
+}
+
+model response {
+  id            BigInt     @id @default(autoincrement())
+  created_at    DateTime   @default(now()) @db.Timestamptz()
+  question      String?
+  user_response String?
+  ai_response   String?
+  user_id       BigInt?
+  user          user_bio?  @relation(fields: [user_id], references: [id])
+}
+
+model user_files {
+  id          BigInt     @id @default(autoincrement())
+  created_at  DateTime   @default(now()) @db.Timestamptz()
+  user_id     BigInt
+  file_type   String
+  file_name   String
+  bucket_name String
+  file_path   String
+  user        user_bio   @relation(fields: [user_id], references: [id])
 }

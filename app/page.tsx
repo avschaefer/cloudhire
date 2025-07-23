@@ -1,12 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import WelcomePage from "./components/welcome-page"
 import BioPage from "./components/bio-page"
 import BehavioralPage from "./components/behavioral-page"
 import ExamPage from "./components/exam-page"
 import SubmissionPage from "./components/submission-page"
 import type { BehavioralAnswers } from "./components/behavioral-page"
+import { submitUserBio } from "@/lib/supabaseSubmissions"
+import { uploadFile } from "@/lib/supabaseStorage"
+import { fetchMultipleChoiceQuestions, fetchResponseQuestions, fetchCalculationQuestions } from "@/lib/supabaseQueries"
+import { submitMultipleChoiceResponse, submitGeneralResponse, submitCalculationResponse } from "@/lib/supabaseSubmissions"
 
 export interface Question {
   ID: string
@@ -27,6 +31,10 @@ export interface UserBio {
   resume?: File
   transcript?: File
   projects?: File
+  id?: number
+  phone?: string
+  education?: string
+  linkedIn?: string
 }
 
 export interface ExamData {
@@ -61,14 +69,44 @@ export default function ExamApp() {
   const [step, setStep] = useState<Step>("welcome")
   const [userBio, setUserBio] = useState<UserBio | null>(null)
   const [behavioralAnswers, setBehavioralAnswers] = useState<BehavioralAnswers>({})
-  const [questions] = useState<Question[]>([])
+  const [questions, setQuestions] = useState<Question[]>([]);
   const [examResult, setExamResult] = useState<ExamResult | null>(null)
   const [loading, setLoading] = useState(false)
 
-  const handleBioNext = (bio: UserBio) => {
-    setUserBio(bio)
-    setStep("behavioral")
-  }
+  useEffect(() => {
+    async function loadQuestions() {
+      const mc = await fetchMultipleChoiceQuestions();
+      const concepts = await fetchResponseQuestions();
+      const calc = await fetchCalculationQuestions();
+
+      const all: Question[] = [
+        ...mc.map(q => ({ ID: q.id.toString(), question: q.question, type: "multipleChoice" as const, options: [q.option_a, q.option_b, q.option_c, q.option_d] })),
+        ...concepts.map(q => ({ ID: q.id.toString(), question: q.question, type: "concepts" as const })),
+        ...calc.map(q => ({ ID: q.id.toString(), question: q.question, type: "calculations" as const })),
+      ];
+      setQuestions(all);
+    }
+    loadQuestions();
+  }, []);
+
+  const handleBioNext = async (bio: UserBio) => {
+    const userId = await submitUserBio({
+      firstName: bio.firstName,
+      lastName: bio.lastName,
+      email: bio.email,
+      position: bio.position,
+      motivation: bio.motivation,
+      educationalDegree: bio.educationalDegree,
+      experience: bio.experience
+    });
+
+    if (bio.resume) await uploadFile({ file: bio.resume, userId, fileType: 'resume' });
+    if (bio.transcript) await uploadFile({ file: bio.transcript, userId, fileType: 'transcript' });
+    if (bio.projects) await uploadFile({ file: bio.projects, userId, fileType: 'project' });
+
+    setUserBio({ ...bio, id: userId });
+    setStep("behavioral");
+  };
 
   const handleBehavioralNext = (answers: BehavioralAnswers) => {
     setBehavioralAnswers(answers)
@@ -76,10 +114,24 @@ export default function ExamApp() {
   }
 
   const handleExamComplete = async (_exam: ExamData, timeSpent: number) => {
-    if (!userBio) return
+    if (!userBio || !userBio.id) return;
+    const userId = userBio.id;
 
-    setLoading(true)
+    setLoading(true);
     try {
+      // Submit multiple choice
+      for (const [idStr, response] of Object.entries(_exam.multipleChoice)) {
+        await submitMultipleChoiceResponse({ questionId: Number(idStr), userResponse: response, aiResponse: '', userId });
+      }
+      // Submit concepts (general response)
+      for (const [idStr, response] of Object.entries(_exam.concepts)) {
+        await submitGeneralResponse({ questionId: Number(idStr), userResponse: response, aiResponse: '', userId });
+      }
+      // Submit calculations (assuming single field, adjust if numerical and text separate)
+      for (const [idStr, response] of Object.entries(_exam.calculations)) {
+        await submitCalculationResponse({ questionId: Number(idStr), userResponseNumerical: parseFloat(response), userResponseText: '', aiResponse: '', userId });
+      }
+
       const result: ExamResult = {
         userBio,
         behavioralAnswers,
@@ -88,13 +140,13 @@ export default function ExamApp() {
         maxScore: 0,
         completedAt: new Date().toISOString(),
         timeSpent,
-      }
-      setExamResult(result)
-      setStep("submission")
+      };
+      setExamResult(result);
+      setStep("submission");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   if (loading) {
     return (
@@ -114,7 +166,7 @@ export default function ExamApp() {
       case "bio":
         return <BioPage onNext={handleBioNext} userBio={userBio ?? initialBio} />
       case "behavioral":
-        return <BehavioralPage onNext={handleBehavioralNext} />
+        return <BehavioralPage onNext={handleBehavioralNext} userId={userBio?.id ?? 0} />;
       case "exam":
         if (userBio) {
           return (
@@ -123,6 +175,7 @@ export default function ExamApp() {
               userBio={userBio}
               questions={questions}
               onComplete={handleExamComplete}
+              userId={userBio.id ?? 0}
             />
           )
         }

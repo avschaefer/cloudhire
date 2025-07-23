@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { CheckCircle, Clock, User, Mail, Phone, Briefcase, Calendar, GraduationCap, Link, FileText } from "lucide-react"
 import type { ExamData, UserBio } from "../page"
 import { Badge } from "@/components/ui/badge"
+import { generateReport } from '@/lib/reportGenerator';
 
 interface SubmissionPageProps {
   userBio: UserBio
@@ -46,6 +47,12 @@ export default function SubmissionPage({
     localStorage.clear()
     window.location.reload()
   }
+
+  const handleGenerateReport = async () => {
+    if (userBio.id) {
+      await generateReport(userBio.id, 'hiring@company.com'); // Replace with actual email
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto p-6 pt-8">
@@ -217,6 +224,9 @@ export default function SubmissionPage({
             </p>
             <Button onClick={handleNewAssessment} variant="outline">
               Start New Assessment
+            </Button>
+            <Button onClick={handleGenerateReport} className="mt-4">
+              Generate Report
             </Button>
           </div>
         </CardContent>

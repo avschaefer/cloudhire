@@ -19,6 +19,7 @@ interface ExamPageProps {
   userBio: UserBio
   onComplete: (examData: ExamData, timeSpent: number) => void
   questions: Question[]
+  userId: number
 }
 
 export default function ExamPage({ initialExamData, userBio, onComplete, questions }: ExamPageProps) {
@@ -115,8 +116,14 @@ export default function ExamPage({ initialExamData, userBio, onComplete, questio
       calculations: { completed: calculationsCompleted, total: calculationQuestions.length },
       overall: mcCompleted + conceptsCompleted + calculationsCompleted,
       totalOverall: mcQuestions.length + conceptQuestions.length + calculationQuestions.length,
-    }
-  }
+    } as {
+      multipleChoice: { completed: number; total: number };
+      concepts: { completed: number; total: number };
+      calculations: { completed: number; total: number };
+      overall: number;
+      totalOverall: number;
+    };
+  };
 
   const handleAutoSubmit = () => {
     const totalTime = Object.values(timeSpent).reduce((sum, time) => sum + time, 0)
@@ -210,14 +217,14 @@ export default function ExamPage({ initialExamData, userBio, onComplete, questio
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{section.label}</span>
                         </div>
-                        {completion[section.id as keyof typeof completion].completed ===
-                          completion[section.id as keyof typeof completion].total && (
+                        {completion[section.id as 'multipleChoice' | 'concepts' | 'calculations'].completed ===
+                          completion[section.id as 'multipleChoice' | 'concepts' | 'calculations'].total && (
                           <CheckCircle className="w-4 h-4 text-green-600" />
                         )}
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
-                        {completion[section.id as keyof typeof completion].completed}/
-                        {completion[section.id as keyof typeof completion].total} completed
+                        {completion[section.id as 'multipleChoice' | 'concepts' | 'calculations'].completed}/
+                        {completion[section.id as 'multipleChoice' | 'concepts' | 'calculations'].total} completed
                       </div>
                     </button>
                   )
