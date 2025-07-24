@@ -93,15 +93,7 @@ export default function Home() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
         <div className="container mx-auto p-4">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">Cloudhire Admin Dashboard</h1>
-            <button 
-              onClick={handleLogout} 
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              Log Out
-            </button>
-          </div>
+          
           <AdminDashboard userId={user.id} />
         </div>
       </div>

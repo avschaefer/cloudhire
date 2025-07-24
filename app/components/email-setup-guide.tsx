@@ -5,4 +5,4 @@ export default function EmailSetupGuide() {
       <p>Manual step: Copy the generated magic link and send via your work email.</p>
     </div>
   );
-} 
+}

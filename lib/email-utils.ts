@@ -10,4 +10,4 @@ export function formatReportEmail(report: any): string {
 export function validateEmailConfig(): boolean {
   // TODO: Implement actual email configuration validation
   return true;
-} 
+}
