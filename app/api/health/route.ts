@@ -1,7 +1,7 @@
 // app/api/health/route.ts - Health check endpoint
 import { NextResponse } from 'next/server';
-import { validateConfig } from '@/lib/config';
-import { validateEmailConfig } from '@/lib/email-utils';
+import { validateConfig } from '../../../lib/config';
+import { validateEmailConfig } from '../../../lib/email-utils';
 
 export const runtime = 'nodejs';
 
