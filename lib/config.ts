@@ -1,12 +1,5 @@
 // lib/config.ts - Centralized configuration management
 export interface Config {
-  // Email Configuration
-  resend: {
-    apiKey: string;
-    fromEmail: string;
-    toEmail: string;
-  };
-  
   // AI Configuration
   ai: {
     xaiApiKey: string;
@@ -39,11 +32,6 @@ function getOptionalEnvVar(key: string, defaultValue: string = ''): string {
 
 export function getConfig(): Config {
   return {
-    resend: {
-      apiKey: getRequiredEnvVar('RESEND_API_KEY'),
-      fromEmail: getRequiredEnvVar('RESEND_FROM_EMAIL'),
-      toEmail: getRequiredEnvVar('RESEND_TO_EMAIL'),
-    },
     ai: {
       xaiApiKey: getRequiredEnvVar('XAI_API_KEY'),
       graderWorkerUrl: getOptionalEnvVar('AI_GRADER_WORKER_URL'),
@@ -70,10 +58,6 @@ export function validateConfig(): void {
 }
 
 // Helper functions for specific config sections
-export function getResendConfig() {
-  return getConfig().resend;
-}
-
 export function getAiConfig() {
   return getConfig().ai;
 }

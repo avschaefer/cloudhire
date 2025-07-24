@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase, supabaseCall } from './supabase';
 
 export async function submitUserInfo({ firstName, lastName, email, degreeType, degreeName, yearsExperience }: { firstName: string, lastName: string, email: string, degreeType: string, degreeName: string, yearsExperience: string }) {
   const { data, error } = await supabase
@@ -18,10 +18,10 @@ export async function submitFileMetadata({ userId, fileType, fileName, bucketNam
   return data;
 }
 
-export async function submitUserResponse({ userId, questionType, questionId, responseText, responseNumerical, aiFeedback, isCorrect }: { userId: string, questionType: string, questionId: number, responseText?: string, responseNumerical?: number, aiFeedback?: string, isCorrect?: boolean }) {
-  const { data, error } = await supabase
-    .from('user_responses')
-    .insert([{ user_id: userId, question_type: questionType, question_id: questionId, response_text: responseText, response_numerical: responseNumerical, ai_feedback: aiFeedback, is_correct: isCorrect }]);
-  if (error) throw new Error(`Error submitting user response: ${error.message}`);
-  return data;
+export async function submitUserResponse({ userId, questionType, questionId, responseText, responseNumerical }: { userId: string, questionType: string, questionId: number, responseText?: string, responseNumerical?: number }) {
+  return supabaseCall(async () => {
+    const { data, error } = await supabase.from('user_responses').insert([{ user_id: userId, question_type: questionType, question_id: questionId, response_text: responseText, response_numerical: responseNumerical }]);
+    if (error) throw error;
+    return data;
+  });
 } 

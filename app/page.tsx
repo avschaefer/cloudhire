@@ -6,6 +6,7 @@ import { generateMagicLink, getCurrentUser, checkAdminRole, logout } from '../li
 import UserProfile from '../components/UserProfile';
 import FileUpload from '../components/FileUpload';
 import ExamDashboard from '../components/ExamDashboard';
+import AdminDashboard from '../components/AdminDashboard';
 
 export default function Home() {
   const [userId, setUserId] = useState<string | null>(null);
@@ -111,23 +112,7 @@ export default function Home() {
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Cloudhire Exam</h1>
-      {isAdmin && (
-        <div className="mb-6 p-4 border rounded">
-          <h2 className="text-xl font-semibold mb-2">Admin: Generate Magic Link for Candidate</h2>
-          <form onSubmit={handleMagicLink}>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Candidate Email"
-              className="p-2 border rounded mb-2 w-full"
-              required
-            />
-            <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">Generate</button>
-          </form>
-          {message && <p className="mt-2">{message}</p>}
-        </div>
-      )}
+      {isAdmin && <AdminDashboard userId={userId} />}
       <button onClick={handleLogout} className="mb-4 bg-red-500 text-white px-4 py-2 rounded">Log Out</button>
       <UserProfile userId={userId} />
       <FileUpload userId={userId} />

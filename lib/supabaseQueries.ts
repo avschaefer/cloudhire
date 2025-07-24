@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase, supabaseCall } from './supabase';
 
 export async function fetchUserInfo(userId: string) {
   const { data, error } = await supabase
@@ -44,4 +44,20 @@ export async function fetchResponseQuestions() {
     .order('id', { ascending: true });
   if (error) throw new Error(`Error fetching response questions: ${error.message}`);
   return data;
+}
+
+export async function fetchLatestSubmissions(limit: number = 10): Promise<any[]> {
+  return supabaseCall(async () => {
+    const { data, error } = await supabase.from('user_responses').select('*').order('created_at', { ascending: false }).limit(limit);
+    if (error) throw error;
+    return data;
+  });
+}
+
+export async function fetchAllUserResponses(): Promise<any[]> {
+  return supabaseCall(async () => {
+    const { data, error } = await supabase.from('user_responses').select('*');
+    if (error) throw error;
+    return data;
+  });
 } 
