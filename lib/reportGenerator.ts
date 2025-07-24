@@ -17,4 +17,4 @@ async function generateReport(userId: string, emailTo: string) {
   return report;
 }
 
-export default generateReport; 
+export default generateReport;

@@ -1,137 +1,91 @@
-"use client"
+'use client'
 
-import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
-import { generateMagicLink, getCurrentUser, checkAdminRole, logout } from '../lib/supabaseAuth';
-import UserProfile from '../components/UserProfile';
-import FileUpload from '../components/FileUpload';
-import ExamDashboard from '../components/ExamDashboard';
+import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
+import type { User } from '@supabase/supabase-js'
+import { AuthPage } from './components/auth-page'
+import { ExamDashboard } from '@/components/ExamDashboard'
+import { Loader2 } from 'lucide-react'
+
+// Create a mock admin user object that satisfies the User type shape
+const createMockAdminUser = (): User => ({
+  id: 'admin-user-id',
+  app_metadata: { provider: 'email' },
+  user_metadata: { is_admin: true },
+  aud: 'authenticated',
+  created_at: new Date().toISOString(),
+  email: 'admin@cloudhire.local',
+});
 
 export default function Home() {
-  const [userId, setUserId] = useState<string | null>(null);
-  const [email, setEmail] = useState<string>('');
-  const [code, setCode] = useState<string>('');
-  const [isAdminEntry, setIsAdminEntry] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [message, setMessage] = useState<string>('');
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
-    async function init() {
-      const user = await getCurrentUser();
-      if (user) {
-        const { data } = await supabase.from('user_info').select('id').eq('id', user.id).single();
-        if (!data) {
-          await supabase.from('user_info').insert({
-            id: user.id,
-            email: user.email,
-          });
-        }
-        setUserId(user.id);
-        setIsAdmin(await checkAdminRole(user.id));
+    // Check for a real Supabase session on initial load
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        setUser(session.user)
       }
-      setLoading(false);
+      setLoading(false)
     }
-    init();
-  }, []);
+    getSession()
 
-  const handleMagicLink = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const magicLink = await generateMagicLink(email);
-      setMessage(`Magic link generated. Copy and send this to the candidate: ${magicLink}`);
-      setEmail('');
-    } catch (error: any) {
-      setMessage(`Error: ${error.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
+    // Listen for auth state changes for real users (candidates)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+      setIsAdmin(false) // Real sessions are never admin
+      setLoading(false)
+    })
 
-  const handleAdminCode = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const adminCode = process.env.NEXT_PUBLIC_ADMIN_CODE;
-      if (!adminCode || code !== adminCode) throw new Error('Invalid admin code');
-      const user = await getCurrentUser();
-      if (!user) {
-        const magicLink = await generateMagicLink('your-email@example.com'); // Your admin email
-        setMessage(`Admin magic link generated: ${magicLink}`);
-      } else if (await checkAdminRole(user.id)) {
-        setUserId(user.id);
-        setIsAdmin(true);
-      } else {
-        await supabase.from('user_info').update({ role: 'admin' }).eq('id', user.id);
-        setUserId(user.id);
-        setIsAdmin(true);
-      }
-    } catch (error: any) {
-      setMessage(`Error: ${error.message}`);
-    } finally {
-      setLoading(false);
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const handleAdminLogin = async (code: string): Promise<{ success: boolean; message: string }> => {
+    const response = await fetch('/api/auth/admin-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Admin login failed')
     }
-  };
+
+    // If code is valid, create and set the mock admin user
+    const mockAdmin = createMockAdminUser();
+    setUser(mockAdmin)
+    setIsAdmin(true)
+    
+    return { success: true, message: 'Admin login successful!' }
+  }
 
   const handleLogout = async () => {
-    await logout();
-    setUserId(null);
-    setIsAdmin(false);
-  };
+    if (isAdmin) {
+      // For mock admin, just clear the state
+      setUser(null)
+      setIsAdmin(false)
+    } else {
+      // For real users, sign out from Supabase
+      await supabase.auth.signOut()
+    }
+  }
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    )
+  }
 
-  if (!userId) return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Cloudhire - Access Exam</h1>
-      {isAdminEntry ? (
-        <form onSubmit={handleAdminCode}>
-          <input
-            type="text"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            placeholder="Admin Code"
-            className="p-2 border rounded mb-2 w-full"
-            required
-          />
-          <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">Enter</button>
-          <button type="button" onClick={() => setIsAdminEntry(false)} className="ml-2 bg-gray-500 text-white px-4 py-2 rounded">Back</button>
-        </form>
-      ) : (
-        <div>
-          <p>Please check your email for the magic link to access the exam.</p>
-          <button type="button" onClick={() => setIsAdminEntry(true)} className="mt-4 bg-gray-500 text-white px-4 py-2 rounded">Admin Entry</button>
-        </div>
-      )}
-      {message && <p className="mt-2">{message}</p>}
-    </div>
-  );
+  if (!user) {
+    return <AuthPage onAdminLogin={handleAdminLogin} />
+  }
 
-  return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Cloudhire Exam</h1>
-      {isAdmin && (
-        <div className="mb-6 p-4 border rounded">
-          <h2 className="text-xl font-semibold mb-2">Admin: Generate Magic Link for Candidate</h2>
-          <form onSubmit={handleMagicLink}>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Candidate Email"
-              className="p-2 border rounded mb-2 w-full"
-              required
-            />
-            <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">Generate</button>
-          </form>
-          {message && <p className="mt-2">{message}</p>}
-        </div>
-      )}
-      <button onClick={handleLogout} className="mb-4 bg-red-500 text-white px-4 py-2 rounded">Log Out</button>
-      <UserProfile userId={userId} />
-      <FileUpload userId={userId} />
-      <ExamDashboard userId={userId} />
-    </div>
-  );
+  return <ExamDashboard user={user} isAdmin={isAdmin} onLogout={handleLogout} />
 }

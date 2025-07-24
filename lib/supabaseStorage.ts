@@ -26,4 +26,4 @@ export async function getFileUrl({ userId, fileType, filePath }: { userId: strin
   const bucketMap = { resume: 'resumes', transcript: 'transcripts', project: 'projects' };
   const { data } = supabase.storage.from(bucketMap[fileType.toLowerCase()]).getPublicUrl(filePath);
   return data.publicUrl;
-} 
+}

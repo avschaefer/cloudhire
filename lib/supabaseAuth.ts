@@ -23,11 +23,15 @@ export async function getCurrentUser() {
 }
 
 export async function checkAdminRole(userId: string): Promise<boolean> {
-  const { data } = await supabase.from('user_info').select('role').eq('id', userId).single();
+  const { data, error } = await supabase.from('user_info').select('role').eq('id', userId).single();
+  if (error && error.code !== 'PGRST116') { // PGRST116: "The result contains 0 rows"
+    console.error('Error checking admin role:', error);
+    return false;
+  }
   return data?.role === 'admin';
 }
 
 export async function logout(): Promise<void> {
   const { error } = await supabase.auth.signOut();
   if (error) throw new Error(`Error logging out: ${error.message}`);
-} 
+}

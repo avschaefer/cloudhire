@@ -44,4 +44,4 @@ export async function fetchResponseQuestions() {
     .order('id', { ascending: true });
   if (error) throw new Error(`Error fetching response questions: ${error.message}`);
   return data;
-} 
+}

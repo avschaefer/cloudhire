@@ -24,4 +24,4 @@ export async function submitUserResponse({ userId, questionType, questionId, res
     .insert([{ user_id: userId, question_type: questionType, question_id: questionId, response_text: responseText, response_numerical: responseNumerical, ai_feedback: aiFeedback, is_correct: isCorrect }]);
   if (error) throw new Error(`Error submitting user response: ${error.message}`);
   return data;
-} 
+}
