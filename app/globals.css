@@ -2,46 +2,37 @@
 @tailwind components;
 @tailwind utilities;
 
-/* This CSS is crucial for making the background visible */
 @layer base {
-  /* Forcing a transparent background on the root elements */
-  html,
-  body {
-    background-color: transparent !important;
-  }
-
-  /* Ensure the body takes up the full height */
-  body {
-    min-height: 100vh;
-  }
-
-  /* We remove the default background color from shadcn's theme system,
-     as our background is now handled by the canvas component. */
   :root {
-    --background: transparent; /* Set to transparent */
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 84% 4.9%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 94.1%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
     --radius: 0.75rem;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
   }
 
   .dark {
-    --background: transparent; /* Also transparent for dark mode */
+    --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
@@ -60,5 +51,84 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 224.3 76.3% 94.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
   }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Custom styles for the exam interface */
+.exam-container {
+  @apply max-w-4xl mx-auto p-6;
+}
+
+.question-card {
+  @apply bg-white rounded-lg shadow-sm border p-6 mb-6;
+}
+
+.progress-bar {
+  @apply w-full bg-gray-200 rounded-full h-2;
+}
+
+.progress-fill {
+  @apply bg-blue-600 h-2 rounded-full transition-all duration-300;
+}
+
+.timer {
+  @apply bg-red-50 border border-red-200 rounded-lg p-3 text-red-800;
+}
+
+.answer-input {
+  @apply w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+}
+
+.multiple-choice-option {
+  @apply flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors;
+}
+
+.multiple-choice-option.selected {
+  @apply bg-blue-50 border-blue-300;
+}
+
+.navigation-buttons {
+  @apply flex justify-between items-center mt-8 pt-6 border-t;
+}
+
+.btn-primary {
+  @apply bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors;
+}
+
+.btn-secondary {
+  @apply bg-gray-200 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors;
+}
+
+.results-summary {
+  @apply bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 mb-6;
+}
+
+.score-display {
+  @apply text-3xl font-bold text-blue-600;
+}
+
+.feedback-section {
+  @apply bg-white rounded-lg shadow-sm border p-6 mb-4;
+}
+
+.strength-item {
+  @apply text-green-600 flex items-center mb-2;
+}
+
+.improvement-item {
+  @apply text-amber-600 flex items-center mb-2;
 }
