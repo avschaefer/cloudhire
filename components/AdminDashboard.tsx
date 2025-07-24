@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Wand2, ShieldCheck, History, AlertCircle, Copy, LogOut } from "lucide-react"
 import { toast } from "sonner"
+import { useRouter } from 'next/navigation';
 
 type Submission = {
   id: string
@@ -20,13 +21,14 @@ type Submission = {
   created_at: string
 }
 
-export default function AdminDashboard({ userId }: { userId: string }) {
+export default function AdminDashboard({ userId, onLogout }: { userId: string; onLogout?: () => void }) {
   const [email, setEmail] = useState("")
   const [magicLink, setMagicLink] = useState("")
   const [submissions, setSubmissions] = useState<Submission[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
+  const router = useRouter();
 
   useEffect(() => {
     async function loadSubmissions() {
@@ -52,31 +54,45 @@ export default function AdminDashboard({ userId }: { userId: string }) {
 
   const handleGenerateLink = async () => {
     if (!email) {
-      toast.error("Please enter a candidate email.")
-      return
+      toast.error("Please enter a candidate email.");
+      return;
     }
-    setIsGenerating(true)
+    setIsGenerating(true);
     try {
-      const link = await generateMagicLink(email)
-      setMagicLink(link)
-      toast.success("Magic link generated successfully!")
+      const response = await fetch('/api/auth/generate-link', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate magic link');
+      }
+
+      const data = await response.json();
+      setMagicLink(data.action_link);
+      toast.success("Magic link generated successfully!");
     } catch (error: any) {
-      console.error(error)
-      toast.error("Failed to generate magic link.")
+      console.error(error);
+      toast.error("Failed to generate magic link.");
     } finally {
-      setIsGenerating(false)
+      setIsGenerating(false);
     }
-  }
+  };
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(magicLink)
     toast.info("Magic link copied to clipboard!")
   }
 
-  const handleLogout = async () => {
-    // Implement your logout logic here, e.g., calling Supabase auth signout
-    console.log("Logging out...")
-  }
+  const handleLogoutClick = async () => {
+    if (onLogout) {
+      await onLogout();
+    }
+    router.push('/');
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-200 dark:from-slate-900 dark:to-slate-800 p-4 sm:p-6 lg:p-8">
@@ -89,7 +105,7 @@ export default function AdminDashboard({ userId }: { userId: string }) {
             <span>Admin Dashboard</span>
           </h1>
           <Button
-            onClick={handleLogout}
+            onClick={handleLogoutClick}
             variant="ghost"
             className="bg-white/80 hover:bg-white/90 text-slate-700 border border-slate-200 shadow-sm transition-all duration-200 hover:shadow-md flex items-center gap-2 px-4 py-2"
           >
