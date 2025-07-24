@@ -129,7 +129,7 @@ export function AuthPage({ onAdminLogin }: AuthPageProps) {
                   Welcome to Cloudhire
                 </CardTitle>
                 <CardDescription className="text-lg mt-2">
-                  Technical Assessment Platform
+                  <br>
                 </CardDescription>
               </div>
             </div>
