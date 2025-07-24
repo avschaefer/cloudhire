@@ -45,3 +45,25 @@ export async function fetchResponseQuestions() {
   if (error) throw new Error(`Error fetching response questions: ${error.message}`);
   return data;
 }
+
+export async function fetchRecentSubmissions() {
+  const { data, error } = await supabase
+    .from('submissions')
+    .select(`
+      id,
+      submitted_at,
+      user_info (
+        name,
+        email
+      )
+    `)
+    .order('submitted_at', { ascending: false })
+    .limit(10);
+
+  if (error) {
+    console.error('Error fetching recent submissions:', error);
+    throw new Error(`Error fetching recent submissions: ${error.message}`);
+  }
+  
+  return data;
+}
