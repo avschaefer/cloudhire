@@ -38,9 +38,9 @@ export function AuthPage({ onAdminLogin }: AuthPageProps) {
   if (showAdminLogin) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center p-4">
-        <div className="w-full max-w-lg">
+        <div className="w-full max-w-2xl">
           <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border-0 shadow-2xl">
-            <CardHeader className="space-y-4 pb-8">
+            <CardHeader className="space-y-4 p-8">
               <div className="flex items-center gap-3">
                 <Button
                   variant="ghost"
@@ -68,7 +68,7 @@ export function AuthPage({ onAdminLogin }: AuthPageProps) {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="p-8 pt-0">
               <form onSubmit={handleAdminSubmit} className="space-y-6">
                 <div className="space-y-2">
                   <label htmlFor="admin-code" className="text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -117,9 +117,9 @@ export function AuthPage({ onAdminLogin }: AuthPageProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-lg">
+      <div className="w-full max-w-2xl">
         <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border-0 shadow-2xl">
-          <CardHeader className="space-y-6 pb-8">
+          <CardHeader className="p-8 space-y-6 pb-8">
             <div className="flex items-center gap-4">
               <div className="p-4 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500">
                 <Mail className="h-8 w-8 text-white" />
@@ -134,7 +134,7 @@ export function AuthPage({ onAdminLogin }: AuthPageProps) {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="space-y-8">
+          <CardContent className="p-8 pt-0">
             <div className="text-center space-y-4">
               <div className="p-6 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800">
                 <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-3">
@@ -148,7 +148,7 @@ export function AuthPage({ onAdminLogin }: AuthPageProps) {
                 <p>Didn't receive an email? Check your spam folder or contact your recruiter.</p>
               </div>
             </div>
-            <div className="pt-6 border-t border-slate-200 dark:border-slate-700">
+            <div className="pt-6 mt-8 border-t border-slate-200 dark:border-slate-700">
               <Button
                 variant="ghost"
                 onClick={() => setShowAdminLogin(true)}
