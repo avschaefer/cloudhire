@@ -128,9 +128,6 @@ export function AuthPage({ onAdminLogin }: AuthPageProps) {
                 <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                   Welcome to Cloudhire
                 </CardTitle>
-                <CardDescription className="text-lg mt-2">
-                  <br>
-                </CardDescription>
               </div>
             </div>
           </CardHeader>
