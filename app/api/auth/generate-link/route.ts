@@ -1,45 +1,40 @@
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { cookies } from 'next/headers';
 
-export async function POST(request: Request) {
-  const cookieStore = cookies();
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: () => cookieStore }
-  );
+export async function POST(request: NextRequest) {
+  try {
+    const { email } = await request.json();
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+    if (!email) {
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    }
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !serviceKey) {
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
+
+    const supabaseAdmin = createClient(supabaseUrl, serviceKey);
+
+    const { data, error } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'magiclink',
+      email,
+      options: {
+        redirectTo: process.env.SITE_URL || 'http://localhost:3000',
+      },
+    });
+
+    if (error) {
+      console.error('Error generating magic link:', error);
+      return NextResponse.json({ error: 'Failed to generate magic link' }, { status: 500 });
+    }
+
+    return NextResponse.json({ action_link: data.properties.action_link });
+
+  } catch (error: any) {
+    console.error('Generate link error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-
-  const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-
-  const { data: userData } = await supabaseAdmin
-    .from('user_info')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  if (userData?.role !== 'admin') {
-    return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
-  }
-
-  const { email } = await request.json();
-
-  const { data, error } = await supabaseAdmin.auth.generateLink({
-    type: 'magiclink',
-    email,
-    options: { redirectTo: process.env.SITE_URL || 'https://www.cloudhire.app' }
-  });
-
-  if (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
-  }
-
-  return new Response(JSON.stringify({ action_link: data.properties.action_link }));
-} 
+}

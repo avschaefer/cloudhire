@@ -18,10 +18,10 @@ export async function submitFileMetadata({ userId, fileType, fileName, bucketNam
   return data;
 }
 
-export async function submitUserResponse({ userId, questionType, questionId, responseText, responseNumerical }: { userId: string, questionType: string, questionId: number, responseText?: string, responseNumerical?: number }) {
+export async function submitUserResponse({ userId, questionType, questionId, responseText, responseNumerical, aiFeedback, isCorrect }: { userId: string, questionType: string, questionId: number, responseText?: string, responseNumerical?: number, aiFeedback?: string, isCorrect?: boolean }) {
   return supabaseCall(async () => {
-    const { data, error } = await supabase.from('user_responses').insert([{ user_id: userId, question_type: questionType, question_id: questionId, response_text: responseText, response_numerical: responseNumerical }]);
+    const { data, error } = await supabase.from('user_responses').insert([{ user_id: userId, question_type: questionType, question_id: questionId, response_text: responseText, response_numerical: responseNumerical, ai_feedback: aiFeedback, is_correct: isCorrect }]);
     if (error) throw error;
     return data;
   });
-} 
+}

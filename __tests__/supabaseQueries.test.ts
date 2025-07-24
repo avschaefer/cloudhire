@@ -15,4 +15,4 @@ describe('Supabase Queries', () => {
     const result = await fetchBehavioralQuestions();
     expect(result).toEqual(mockData);
   });
-}); 
+});

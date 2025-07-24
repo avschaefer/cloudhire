@@ -50,4 +50,4 @@ export default function UserProfile({ userId }: { userId: string }) {
       )}
     </div>
   );
-} 
+}

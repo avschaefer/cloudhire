@@ -83,4 +83,4 @@ export default function QuestionComponent({ questionType, onAnswer }: { question
       </button>
     </div>
   );
-} 
+}
