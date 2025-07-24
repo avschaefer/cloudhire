@@ -53,7 +53,8 @@ export default function Home() {
     e.preventDefault();
     setLoading(true);
     try {
-      if (code !== 'ADMIN123') throw new Error('Invalid admin code');
+      const adminCode = process.env.NEXT_PUBLIC_ADMIN_CODE;
+      if (!adminCode || code !== adminCode) throw new Error('Invalid admin code');
       const user = await getCurrentUser();
       if (!user) {
         const magicLink = await generateMagicLink('your-email@example.com'); // Your admin email
