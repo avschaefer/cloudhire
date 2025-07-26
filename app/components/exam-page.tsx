@@ -107,9 +107,9 @@ export default function ExamPage({ initialExamData, userBio, onComplete, questio
   }
 
   const getCompletionStatus = () => {
-    const mcQuestions = questions.filter((q) => q.type === "multipleChoice")
-    const conceptQuestions = questions.filter((q) => q.type === "concepts")
-    const calculationQuestions = questions.filter((q) => q.type === "calculations")
+    const mcQuestions = questions.filter((q) => q && q.type === "multipleChoice")
+    const conceptQuestions = questions.filter((q) => q && q.type === "concepts")
+    const calculationQuestions = questions.filter((q) => q && q.type === "calculations")
 
     const mcCompleted = mcQuestions.filter((q) => examData.multipleChoice[q.ID]?.trim().length > 0).length
     const conceptsCompleted = conceptQuestions.filter((q) => examData.concepts[q.ID]?.trim().length > 0).length
@@ -156,13 +156,13 @@ export default function ExamPage({ initialExamData, userBio, onComplete, questio
     return "text-gray-600"
   }
 
-  const mcQuestions = questions.filter((q) => q.type === "multipleChoice")
-  const conceptQuestions = questions.filter((q) => q.type === "concepts")
-  const calculationQuestions = questions.filter((q) => q.type === "calculations")
+  const mcQuestions = questions.filter((q) => q && q.type === "multipleChoice")
+  const conceptQuestions = questions.filter((q) => q && q.type === "concepts")
+  const calculationQuestions = questions.filter((q) => q && q.type === "calculations")
 
-  const nonBehavioralQuestions = questions; // Assume fetched non-behavioral
+  const nonBehavioralQuestions = questions.filter(q => q); // Filter out any undefined questions
   const currentQuestion = nonBehavioralQuestions[currentQuestionIndex];
-  const isAnswered = !!examData[currentQuestion.type]?.[currentQuestion.ID];
+  const isAnswered = currentQuestion ? !!examData[currentQuestion.type]?.[currentQuestion.ID] : false;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
