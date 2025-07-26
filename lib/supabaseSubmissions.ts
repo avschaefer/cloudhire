@@ -26,6 +26,16 @@ export async function submitUserResponse({ userId, questionType, questionId, res
   });
 }
 
+export async function submitBehavioralResponse({ questionId, userResponse, aiResponse, userId }: { questionId: number, userResponse: string, aiResponse: string, userId: number }) {
+  return submitUserResponse({ 
+    userId: userId.toString(), 
+    questionType: 'behavioral', 
+    questionId, 
+    responseText: userResponse,
+    aiFeedback: aiResponse 
+  });
+}
+
 export async function submitExamResponses(userId: string, examData: { multipleChoice: Record<string, string>; concepts: Record<string, string>; calculations: Record<string, string> }) {
   const responses: any[] = [];
   Object.entries(examData.multipleChoice).forEach(([qid, responseText]) => {

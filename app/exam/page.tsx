@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import ExamPage from '../components/exam-page';
 import { getCurrentUser, getTestUserId } from '../../lib/supabaseAuth';
-import { fetchUserInfo, fetchNonBehavioralQuestions, fetchUserExamData, fetchMultipleChoiceQuestions, fetchCalculationQuestions, fetchResponseQuestions } from '../../lib/supabaseQueries';
+import { fetchUserInfo, fetchUserExamData, fetchMultipleChoiceQuestions, fetchCalculationQuestions, fetchResponseQuestions } from '../../lib/supabaseQueries';
 import { submitExamResponses } from '../../lib/supabaseSubmissions';
 import { toast } from 'sonner';
 
@@ -67,7 +67,7 @@ export default function Exam() {
     load();
   }, [isTest]);
 
-  const onComplete = async (examData: any, totalTime: number) => {
+  const onComplete = async (examData: any) => {
     if (!userId) return;
     try {
       await submitExamResponses(userId, examData);
