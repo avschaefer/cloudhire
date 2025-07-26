@@ -196,7 +196,3 @@ def grade_answer(answer_id: str):
                              json={'model': 'grok-beta', 'messages': [{'role': 'user', 'content': f'Grade: {answer["answer_text"]}' }]})
     score, feedback = parse_response(response.json())
     insert_grading_result(answer_id, score, feedback)
-
-# For Cloudflare Workers
-def fetch(request):
-    return handler(request)

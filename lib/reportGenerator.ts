@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { getFileUrl } from './supabaseStorage';
 import { fetchUserInfo } from './supabaseQueries';
+import { sendAiGradedReport } from './email-utils';
 
 async function generateReport(userId: string, emailTo: string) {
   const userInfo = await fetchUserInfo(userId);
@@ -14,6 +15,7 @@ async function generateReport(userId: string, emailTo: string) {
 
   const report = { userInfo, files, responses, fileUrls };
   console.log('Report:', report); // Mock email for now
+  await sendAiGradedReport(report, emailTo);
   return report;
 }
 
