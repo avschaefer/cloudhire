@@ -34,15 +34,15 @@ export async function GET() {
       health.status = 'degraded';
     }
 
-    // Check database (if available)
-    try {
-      // This would check D1 database connectivity
-      // For now, we'll assume it's available if config is valid
-      health.services.database = health.services.config;
-    } catch (error) {
-      health.services.database = false;
-      health.status = 'degraded';
-    }
+    // Comment out or remove database check if it's Cloudflare-specific
+    // try {
+    //   // This would check D1 database connectivity
+    //   // For now, we'll assume it's available if config is valid
+    //   health.services.database = health.services.config;
+    // } catch (error) {
+    //   health.services.database = false;
+    //   health.status = 'degraded';
+    // }
 
     const statusCode = health.status === 'healthy' ? 200 : 503;
     

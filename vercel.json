@@ -1,4 +1,8 @@
 {
+  "installCommand": "pnpm install --no-frozen-lockfile",
+  "buildCommand": "pnpm build",
+  "outputDirectory": ".next",
+  "ignoreCommand": "git diff HEAD --quiet .",
   "builds": [
     {
       "src": "package.json",
