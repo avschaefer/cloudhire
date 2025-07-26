@@ -39,13 +39,13 @@ export async function getTestUserId() {
       const { data, error } = await supabase.from('user_info').select('id').eq('role', 'admin').single();
       if (error) {
         console.log('No admin user found, creating fallback:', error);
-        // Return a predictable test UUID for development
-        return 'test-user-development-mode';
+        // Return a proper UUID format for development
+        return '00000000-0000-0000-0000-000000000001';
       }
-      return data?.id || 'test-user-development-mode';
+      return data?.id || '00000000-0000-0000-0000-000000000001';
     } catch (err) {
       console.error('Error fetching admin user:', err);
-      return 'test-user-development-mode';
+      return '00000000-0000-0000-0000-000000000001';
     }
   });
 }
