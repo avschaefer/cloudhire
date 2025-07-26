@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import UserProfile from '../../components/UserProfile';
 import FileUpload from '../../components/FileUpload';
-import ExamDashboard from '../../components/ExamDashboard';
+import { ExamDashboard } from '../../components/ExamDashboard';
 
 interface HomePageProps {
   session: Session;
@@ -65,50 +65,52 @@ export default function HomePage({ session }: HomePageProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <header className="flex justify-between items-center mb-6 pb-4 border-b">
-        <h1 className="text-3xl font-bold">Cloudhire Dashboard</h1>
-        <Button onClick={handleLogout} variant="outline">
-          Log Out
-        </Button>
-      </header>
-      
-      {isAdmin && (
-        <div className="mb-6 p-6 border rounded-lg bg-slate-50 dark:bg-slate-800/50">
-          <h2 className="text-xl font-semibold mb-4">Admin: Generate Magic Link for Candidate</h2>
-          <form onSubmit={handleGenerateCandidateLink} className="flex items-end gap-4">
-            <div className="flex-grow">
-              <label htmlFor="candidate-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Candidate Email</label>
-              <Input
-                id="candidate-email"
-                type="email"
-                value={candidateEmail}
-                onChange={(e) => setCandidateEmail(e.target.value)}
-                placeholder="candidate@example.com"
-                required
-              />
-            </div>
-            <Button type="submit" disabled={adminLoading}>
-              {adminLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Generate Link
-            </Button>
-          </form>
-          {adminMessage && <p className="mt-3 text-sm">{adminMessage}</p>}
-        </div>
-      )}
-      
-      <main className="space-y-8">
-        <UserProfile userId={session.user.id} />
-        <FileUpload userId={session.user.id} />
-        <ExamDashboard userId={session.user.id} />
-      </main>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <div className="container mx-auto p-4">
+        <header className="flex justify-between items-center mb-6 pb-4 border-b">
+          <h1 className="text-3xl font-bold">Cloudhire Dashboard</h1>
+          <Button onClick={handleLogout} variant="outline">
+            Log Out
+          </Button>
+        </header>
+        
+        {isAdmin && (
+          <div className="mb-6 p-6 border rounded-lg bg-slate-50 dark:bg-slate-800/50">
+            <h2 className="text-xl font-semibold mb-4">Admin: Generate Magic Link for Candidate</h2>
+            <form onSubmit={handleGenerateCandidateLink} className="flex items-end gap-4">
+              <div className="flex-grow">
+                <label htmlFor="candidate-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Candidate Email</label>
+                <Input
+                  id="candidate-email"
+                  type="email"
+                  value={candidateEmail}
+                  onChange={(e) => setCandidateEmail(e.target.value)}
+                  placeholder="candidate@example.com"
+                  required
+                />
+              </div>
+              <Button type="submit" disabled={adminLoading}>
+                {adminLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Generate Link
+              </Button>
+            </form>
+            {adminMessage && <p className="mt-3 text-sm">{adminMessage}</p>}
+          </div>
+        )}
+        
+        <main className="space-y-8">
+          <UserProfile userId={session.user.id} />
+          <FileUpload userId={session.user.id} />
+          <ExamDashboard user={session.user} isAdmin={isAdmin} onLogout={handleLogout} />
+        </main>
+      </div>
     </div>
   );
 }

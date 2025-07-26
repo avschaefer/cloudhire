@@ -2,7 +2,7 @@ import { supabase, supabaseCall } from './supabase';
 
 export async function generateMagicLink(email: string): Promise<string> {
   return supabaseCall(async () => {
-    const { data, error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
+    const { data, error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: process.env.NEXT_PUBLIC_APP_URL || 'https://www.cloudhire.app/' } });
     if (error) throw error;
     return (data as any).properties?.action_link || 'Link generated - check Supabase dashboard for details';
   });
@@ -31,4 +31,8 @@ export async function logout(): Promise<void> {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   });
+}
+
+export function createTestSession() {
+  return { id: 'test-user-id' };
 }

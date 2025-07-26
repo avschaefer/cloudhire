@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { uploadFile, getFileUrl } from '../lib/supabaseStorage';
 import { supabase } from '../lib/supabase';
+import { Card } from './ui/card';
 
 export default function FileUpload({ userId }: { userId: string }) {
   const [file, setFile] = useState<File | null>(null);
@@ -33,7 +34,7 @@ export default function FileUpload({ userId }: { userId: string }) {
   };
 
   return (
-    <div className="p-4">
+    <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border-0 shadow-2xl p-4">
       <h3 className="text-lg font-bold">Upload Files</h3>
       <div className="mt-2">
         {['resume', 'transcript', 'project'].map((type) => (
@@ -56,6 +57,6 @@ export default function FileUpload({ userId }: { userId: string }) {
           <li key={file.id}>{file.file_name} ({file.file_type})</li>
         ))}
       </ul>
-    </div>
+    </Card>
   );
 }

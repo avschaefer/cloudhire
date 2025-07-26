@@ -91,7 +91,7 @@ export default function Home() {
   // For admin users, show the AdminDashboard
   if (isAdmin) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
         <div className="container mx-auto p-4">
           
           <AdminDashboard userId={user.id} onLogout={handleLogout} />
@@ -100,5 +100,9 @@ export default function Home() {
     )
   }
 
-  return <ExamDashboard user={user} isAdmin={isAdmin} onLogout={handleLogout} />
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <ExamDashboard user={user} isAdmin={isAdmin} onLogout={handleLogout} />
+    </div>
+  )
 }

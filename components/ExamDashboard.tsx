@@ -73,7 +73,7 @@ export function ExamDashboard({ user, isAdmin, onLogout }: ExamDashboardProps) {
   if (!isAdmin) {
     // Non-admin view
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
         <div className="container mx-auto p-6 lg:p-8 max-w-4xl">
           <header className="flex justify-between items-center mb-8">
             <h1 className="text-2xl font-bold text-slate-800">Candidate Portal</h1>
@@ -97,7 +97,7 @@ export function ExamDashboard({ user, isAdmin, onLogout }: ExamDashboardProps) {
 
   // Admin view
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <div className="container mx-auto p-6 lg:p-8 max-w-6xl">
         {/* Modern Header */}
         <header className="flex flex-col sm:flex-row justify-between items-center mb-10">
@@ -116,7 +116,7 @@ export function ExamDashboard({ user, isAdmin, onLogout }: ExamDashboardProps) {
         {/* Dashboard Content */}
         <div className="space-y-10">
           {/* Magic Link Generation Card */}
-          <Card className="bg-white/90 backdrop-blur-lg border-orange-100/50 shadow-2xl rounded-3xl overflow-hidden">
+          <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border-0 shadow-2xl rounded-3xl overflow-hidden">
             <CardHeader className="p-8">
               <CardTitle className="text-2xl font-bold text-slate-800">Admin Dashboard</CardTitle>
             </CardHeader>
@@ -161,7 +161,7 @@ export function ExamDashboard({ user, isAdmin, onLogout }: ExamDashboardProps) {
           </Card>
 
           {/* Recent Submissions Card */}
-          <Card className="bg-white/90 backdrop-blur-lg border-orange-100/50 shadow-2xl rounded-3xl overflow-hidden">
+          <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border-0 shadow-2xl rounded-3xl overflow-hidden">
             <CardHeader className="p-8">
               <CardTitle className="text-2xl font-bold text-slate-800">Latest Exam Submissions</CardTitle>
             </CardHeader>

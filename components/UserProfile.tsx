@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { fetchUserInfo } from '../lib/supabaseQueries';
 import { submitUserInfo } from '../lib/supabaseSubmissions';
+import { Card } from './ui/card';
 
 export default function UserProfile({ userId }: { userId: string }) {
   const [user, setUser] = useState<any>(null);
@@ -26,7 +27,7 @@ export default function UserProfile({ userId }: { userId: string }) {
   if (!user) return <div>Loading...</div>;
 
   return (
-    <div className="p-4">
+    <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border-0 shadow-2xl p-4">
       <h3 className="text-lg font-bold">User Profile</h3>
       {editMode ? (
         <form onSubmit={handleSubmit} className="mt-2">
@@ -48,6 +49,6 @@ export default function UserProfile({ userId }: { userId: string }) {
           <button onClick={() => setEditMode(true)} className="mt-2 bg-blue-500 text-white px-4 py-2 rounded">Edit Profile</button>
         </div>
       )}
-    </div>
+    </Card>
   );
 }

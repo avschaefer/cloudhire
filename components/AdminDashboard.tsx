@@ -95,7 +95,7 @@ export default function AdminDashboard({ userId, onLogout }: { userId: string; o
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-200 dark:from-slate-900 dark:to-slate-800 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
         <header className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-3">
@@ -116,7 +116,7 @@ export default function AdminDashboard({ userId, onLogout }: { userId: string; o
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1">
-            <Card className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm border-slate-200 dark:border-slate-700 shadow-lg">
+            <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border-0 shadow-2xl">
               <CardHeader>
                 <CardTitle className="flex items-center gap-3 text-xl text-slate-700 dark:text-slate-300">
                   <Wand2 className="h-6 w-6 text-orange-500" />
@@ -154,12 +154,18 @@ export default function AdminDashboard({ userId, onLogout }: { userId: string; o
                     </div>
                   </div>
                 )}
+                <Button
+                  onClick={() => router.push('/exam?test=true')}
+                  className="w-full bg-green-500 text-white px-4 py-2 rounded mt-4"
+                >
+                  Enter Exam as Test User
+                </Button>
               </CardContent>
             </Card>
           </div>
 
           <div className="lg:col-span-2">
-            <Card className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm border-slate-200 dark:border-slate-700 shadow-lg">
+            <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border-0 shadow-2xl">
               <CardHeader>
                 <CardTitle className="flex items-center gap-3 text-xl text-slate-700 dark:text-slate-300">
                   <History className="h-6 w-6 text-orange-500" />
