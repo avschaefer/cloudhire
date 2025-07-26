@@ -25,3 +25,41 @@ export async function submitUserResponse({ userId, questionType, questionId, res
     return data;
   });
 }
+
+export async function submitExamResponses(userId: string, examData: { multipleChoice: Record<string, string>; concepts: Record<string, string>; calculations: Record<string, string> }) {
+  const responses: any[] = [];
+  Object.entries(examData.multipleChoice).forEach(([qid, responseText]) => {
+    if (responseText.trim()) {
+      responses.push({ user_id: userId, question_type: 'multiple_choice', question_id: parseInt(qid), response_text: responseText });
+    }
+  });
+  Object.entries(examData.concepts).forEach(([qid, responseText]) => {
+    if (responseText.trim()) {
+      responses.push({ user_id: userId, question_type: 'response', question_id: parseInt(qid), response_text: responseText });
+    }
+  });
+  const calcMap = new Map<number, {answer?: string; explanation?: string}>();
+  Object.entries(examData.calculations).forEach(([key, value]) => {
+    const match = key.match(/^(\d+)-(answer|explanation)$/);
+    if (match && value.trim()) {
+      const qid = parseInt(match[1]);
+      const type = match[2];
+      if (!calcMap.has(qid)) calcMap.set(qid, {});
+      if (type === 'answer') calcMap.get(qid)!.answer = value;
+      else calcMap.get(qid)!.explanation = value;
+    }
+  });
+  for (const [qid, vals] of calcMap) {
+    responses.push({
+      user_id: userId,
+      question_type: 'calculation',
+      question_id: qid,
+      response_numerical: vals.answer ? parseFloat(vals.answer) : null,
+      response_text: vals.explanation || null
+    });
+  }
+  if (responses.length > 0) {
+    const { error } = await supabase.from('user_responses').insert(responses);
+    if (error) throw new Error(`Error submitting exam responses: ${error.message}`);
+  }
+}

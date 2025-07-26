@@ -62,7 +62,7 @@ export async function checkBehavioralCompleted(userId: string) {
     .eq('user_id', userId)
     .eq('question_type', 'behavioral');
   if (error) throw new Error(`Error checking behavioral completion: ${error.message}`);
-  return count > 0;
+  return (count ?? 0) > 0;
 }
 
 export async function fetchLatestSubmissions(limit: number = 10): Promise<any[]> {
@@ -101,4 +101,22 @@ export async function fetchRecentSubmissions() {
   }
   
   return data;
+}
+
+export async function fetchUserExamData(userId: string): Promise<{ multipleChoice: Record<string, string>; concepts: Record<string, string>; calculations: Record<string, string> }> {
+  const { data, error } = await supabase.from('user_responses').select('*').eq('user_id', userId);
+  if (error) throw new Error(`Error fetching user responses: ${error.message}`);
+  const examData: { multipleChoice: Record<string, string>; concepts: Record<string, string>; calculations: Record<string, string> } = { multipleChoice: {}, concepts: {}, calculations: {} };
+  data.forEach((res: { question_type: string; question_id: number; response_text?: string; response_numerical?: number }) => {
+    const qid = res.question_id.toString();
+    if (res.question_type === 'multiple_choice') {
+      examData.multipleChoice[qid] = res.response_text || '';
+    } else if (res.question_type === 'response') {
+      examData.concepts[qid] = res.response_text || '';
+    } else if (res.question_type === 'calculation') {
+      examData.calculations[`${qid}-answer`] = res.response_numerical?.toString() || '';
+      examData.calculations[`${qid}-explanation`] = res.response_text || '';
+    }
+  });
+  return examData;
 }

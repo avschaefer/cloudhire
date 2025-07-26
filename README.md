@@ -4,7 +4,7 @@ A Next.js web application for conducting AI-evaluated technical exams with autom
 
 ## 🚀 Deployment
 
-This application is deployed on **Cloudflare Workers** using OpenNext for optimal performance and cost-effectiveness.
+This application is deployed on **Vercel** for optimal performance.
 
 ### Live Demo
 - **Production**: [https://www.cloudhire.app](https://www.cloudhire.app)
@@ -141,3 +141,7 @@ This project has been migrated from Vercel to Cloudflare Workers for:
 ## 📝 License
 
 MIT License - see LICENSE file for details.
+
+## Admin Features
+
+- Admin Exam Entry: Admins can enter the exam directly for troubleshooting, development, and demo purposes by clicking 'Enter Exam as Test User' in the dashboard. This redirects to /exam?test=true and uses a test user from Supabase (role: 'test').

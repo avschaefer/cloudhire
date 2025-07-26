@@ -33,6 +33,13 @@ export async function logout(): Promise<void> {
   });
 }
 
+export async function getTestUserId() {
+  return supabaseCall(async () => {
+    const { data } = await supabase.from('user_info').select('id').eq('role', 'test').single();
+    return data?.id || 'test-uuid';
+  });
+}
+
 export function createTestSession() {
   return { id: 'test-user-id' };
 }

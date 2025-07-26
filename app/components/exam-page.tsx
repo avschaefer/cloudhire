@@ -6,10 +6,16 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Clock, CheckCircle, AlertTriangle, User } from "lucide-react"
-import type { ExamData, UserBio, Question } from "../page"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+
+// Add types before interface
+type ExamData = { multipleChoice: Record<string, string>; concepts: Record<string, string>; calculations: Record<string, string> };
+
+type UserBio = { firstName: string; lastName: string; email: string; position: string; experience: string; motivation: string; educationalDegree: string };
+
+type Question = { ID: string; question: string; type: 'multipleChoice' | 'concepts' | 'calculations' };
 
 interface TimeSpent {
   multipleChoice: number
@@ -22,7 +28,7 @@ interface ExamPageProps {
   userBio: UserBio
   onComplete: (examData: ExamData, timeSpent: number) => void
   questions: Question[]
-  userId: number
+  userId: string
 }
 
 export default function ExamPage({ initialExamData, userBio, onComplete, questions }: ExamPageProps) {
@@ -57,7 +63,7 @@ export default function ExamPage({ initialExamData, userBio, onComplete, questio
   // Track time spent in current section
   useEffect(() => {
     const interval = setInterval(() => {
-      setTimeSpent((prev) => ({
+      setTimeSpent((prev: TimeSpent) => ({
         ...prev,
         [currentSection]: prev[currentSection] + 1,
       }))
@@ -263,10 +269,24 @@ export default function ExamPage({ initialExamData, userBio, onComplete, questio
                 {currentQuestion && (
                   <div>
                     <h2 className="text-xl font-bold">{currentQuestion.question}</h2>
-                    <Label>Final Answer</Label>
-                    <Input value={examData[currentQuestion.type]?.[currentQuestion.ID] || ''} onChange={(e) => updateExamData(currentQuestion.type, currentQuestion.ID, e.target.value)} />
-                    <Label>Show your work (optional)</Label>
-                    <Textarea />
+                    {currentQuestion.type === 'calculations' ? (
+                      <>
+                        <Label>Final Answer</Label>
+                        <Input value={examData.calculations[`${currentQuestion.ID}-answer`] || ''} onChange={(e) => updateExamData('calculations', `${currentQuestion.ID}-answer`, e.target.value)} />
+                        <Label>Show your work (optional)</Label>
+                        <Textarea value={examData.calculations[`${currentQuestion.ID}-explanation`] || ''} onChange={(e) => updateExamData('calculations', `${currentQuestion.ID}-explanation`, e.target.value)} />
+                      </>
+                    ) : currentQuestion.type === 'concepts' ? (
+                      <>
+                        <Label>Answer</Label>
+                        <Textarea value={examData.concepts[currentQuestion.ID] || ''} onChange={(e) => updateExamData('concepts', currentQuestion.ID, e.target.value)} />
+                      </>
+                    ) : (
+                      <>
+                        <Label>Answer</Label>
+                        <Input value={examData.multipleChoice[currentQuestion.ID] || ''} onChange={(e) => updateExamData('multipleChoice', currentQuestion.ID, e.target.value)} />
+                      </>
+                    )}
                   </div>
                 )}
                 <div className="flex justify-between mt-4">
