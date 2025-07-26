@@ -24,7 +24,9 @@ function ExamContent() {
       try {
         let uid: string;
         if (isTest) {
+          console.log('Loading test mode...');
           uid = await getTestUserId();
+          console.log('Test user ID:', uid);
         } else {
           const user = await getCurrentUser();
           if (!user) {
@@ -34,6 +36,8 @@ function ExamContent() {
           uid = user.id;
         }
         setUserId(uid);
+        
+        console.log('Fetching data for user:', uid);
         const [bioData, mc, responseQ, calc, examData] = await Promise.all([
           fetchUserInfo(uid),
           fetchMultipleChoiceQuestions(),
@@ -41,6 +45,9 @@ function ExamContent() {
           fetchCalculationQuestions(),
           fetchUserExamData(uid)
         ]);
+        
+        console.log('Fetched data:', { bioData, mcCount: mc.length, responseCount: responseQ.length, calcCount: calc.length });
+        
         setUserBio({
           firstName: bioData?.first_name || '',
           lastName: bioData?.last_name || '',
@@ -57,9 +64,10 @@ function ExamContent() {
         ];
         setQuestions(typedQuestions);
         setInitialExamData(examData);
+        console.log('Successfully loaded exam data');
       } catch (err) {
+        console.error('Error in load function:', err);
         setError('Failed to load exam data');
-        console.error(err);
       } finally {
         setLoading(false);
       }

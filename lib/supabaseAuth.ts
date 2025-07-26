@@ -35,8 +35,18 @@ export async function logout(): Promise<void> {
 
 export async function getTestUserId() {
   return supabaseCall(async () => {
-    const { data } = await supabase.from('user_info').select('id').eq('role', 'test').single();
-    return data?.id || 'test-uuid';
+    try {
+      const { data, error } = await supabase.from('user_info').select('id').eq('role', 'test').single();
+      if (error) {
+        console.log('No test user found, creating fallback:', error);
+        // Return a predictable test UUID for development
+        return 'test-user-development-mode';
+      }
+      return data?.id || 'test-user-development-mode';
+    } catch (err) {
+      console.error('Error fetching test user:', err);
+      return 'test-user-development-mode';
+    }
   });
 }
 
