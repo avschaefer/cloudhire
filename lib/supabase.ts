@@ -13,6 +13,10 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 });
 
+export function createSupabaseClient() {
+  return supabase;
+}
+
 export async function supabaseCall(func: () => Promise<any>): Promise<any> {
   try {
     return await func();

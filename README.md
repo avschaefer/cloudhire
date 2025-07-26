@@ -145,3 +145,7 @@ MIT License - see LICENSE file for details.
 ## Admin Features
 
 - Admin Exam Entry: Admins can enter the exam directly for troubleshooting, development, and demo purposes by clicking 'Enter Exam as Test User' in the dashboard. This redirects to /exam?test=true and uses a test user from Supabase (role: 'test').
+
+## Deployment Notes
+
+- **Vercel Ignored Build Step Fix**: Removed `ignoreCommand: "git diff HEAD --quiet ."` from vercel.json to prevent deployment cancellations. All commits now trigger deployments for consistent CI/CD.

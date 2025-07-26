@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import ExamPage from '../components/exam-page';
 import { getCurrentUser, getTestUserId } from '../../lib/supabaseAuth';
@@ -8,7 +8,7 @@ import { fetchUserInfo, fetchUserExamData, fetchMultipleChoiceQuestions, fetchCa
 import { submitExamResponses } from '../../lib/supabaseSubmissions';
 import { toast } from 'sonner';
 
-export default function Exam() {
+function ExamContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isTest = searchParams.get('test') === 'true';
@@ -92,5 +92,13 @@ export default function Exam() {
         userId={userId}
       />
     </div>
+  );
+}
+
+export default function Exam() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading exam...</div>}>
+      <ExamContent />
+    </Suspense>
   );
 } 
