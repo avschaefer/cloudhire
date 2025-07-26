@@ -58,9 +58,9 @@ function ExamContent() {
           educationalDegree: bioData?.degree_type || ''
         });
         const typedQuestions = [
-          ...mc.map((q: any) => ({...q, type: 'multipleChoice' })),
-          ...responseQ.map((q: any) => ({...q, type: 'concepts' })),
-          ...calc.map((q: any) => ({...q, type: 'calculations' }))
+          ...mc.map((q: any) => ({ ...q, ID: q.id, type: 'multipleChoice' })),
+          ...responseQ.map((q: any) => ({ ...q, ID: q.id, type: 'concepts' })),
+          ...calc.map((q: any) => ({ ...q, ID: q.id, type: 'calculations' }))
         ];
         setQuestions(typedQuestions);
         setInitialExamData(examData);
