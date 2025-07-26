@@ -36,7 +36,7 @@ export async function logout(): Promise<void> {
 export async function getTestUserId() {
   return supabaseCall(async () => {
     try {
-      const { data, error } = await supabase.from('user_info').select('id').eq('role', 'test').single();
+      const { data, error } = await supabase.from('user_info').select('id').eq('role', 'admin').single();
       if (error) {
         console.log('No test user found, creating fallback:', error);
         // Return a predictable test UUID for development

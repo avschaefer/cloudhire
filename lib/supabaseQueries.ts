@@ -68,7 +68,7 @@ export async function fetchBehavioralQuestions() {
 
 export async function fetchResponseQuestions() {
   const { data, error } = await supabase
-    .from('questions_response')
+    .from('questions_free_response')
     .select('*')
     .order('id', { ascending: true });
   if (error) throw new Error(`Error fetching response questions: ${error.message}`);
