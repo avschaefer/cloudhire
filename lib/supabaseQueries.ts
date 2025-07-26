@@ -46,6 +46,25 @@ export async function fetchResponseQuestions() {
   return data;
 }
 
+export async function fetchNonBehavioralQuestions() {
+  const [mc, response, calc] = await Promise.all([
+    fetchMultipleChoiceQuestions(),
+    fetchResponseQuestions(),
+    fetchCalculationQuestions()
+  ]);
+  return [...mc, ...response, ...calc];
+}
+
+export async function checkBehavioralCompleted(userId: string) {
+  const { count, error } = await supabase
+    .from('user_responses')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('question_type', 'behavioral');
+  if (error) throw new Error(`Error checking behavioral completion: ${error.message}`);
+  return count > 0;
+}
+
 export async function fetchLatestSubmissions(limit: number = 10): Promise<any[]> {
   return supabaseCall(async () => {
     const { data, error } = await supabase.from('user_responses').select('*').order('created_at', { ascending: false }).limit(limit);

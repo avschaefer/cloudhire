@@ -3,7 +3,6 @@
 import { useSearchParams } from 'next/navigation';
 import ExamPage from '../components/exam-page';
 import { createTestSession } from '../../lib/supabaseAuth';
-import { Question } from '../../types/exam';
 
 export default function Exam() {
   const searchParams = useSearchParams();

@@ -52,7 +52,7 @@ export default function BehavioralPage({ onNext, userId }: BehavioralPageProps) 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading questions...</div>;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <div className="container mx-auto px-4 py-12">
         <div className="mx-auto max-w-3xl">
           <div className="mb-8 text-center">
@@ -62,11 +62,11 @@ export default function BehavioralPage({ onNext, userId }: BehavioralPageProps) 
             </span>
             <h1 className="mb-4 text-3xl font-bold text-gray-900">Situational Questions</h1>
             <p className="text-lg text-gray-600">
-              Please provide thoughtful responses. There is no time limit for this section.
+              Please provide thoughtful responses (100-400 words per question, max 400 words). There is no time limit for this section.
             </p>
           </div>
 
-          <Card>
+          <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border-0 shadow-2xl">
             <CardHeader>
               <CardTitle>Your Responses</CardTitle>
             </CardHeader>
@@ -85,7 +85,9 @@ export default function BehavioralPage({ onNext, userId }: BehavioralPageProps) 
                       className="resize-y"
                       value={answers[q.id] ?? ""}
                       onChange={(e) => handleChange(q.id.toString(), e.target.value)}
+                      maxLength={400}
                     />
+                    <p className="text-sm text-gray-500">{answers[q.id]?.length || 0}/400 words</p>
                   </div>
                 ))}
                 <div className="border-t pt-6">

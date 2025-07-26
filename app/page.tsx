@@ -7,6 +7,10 @@ import { AuthPage } from './components/auth-page'
 import { ExamDashboard } from '@/components/ExamDashboard'
 import { Loader2 } from 'lucide-react'
 import AdminDashboard from '../components/AdminDashboard'
+import { useRouter } from 'next/router';
+import BehavioralPage from './components/behavioral-page';
+import ExamPage from './components/exam-page';
+import { fetchNonBehavioralQuestions, checkBehavioralCompleted } from '@/lib/supabaseQueries';
 
 // Create a mock admin user object that satisfies the User type shape
 const createMockAdminUser = (): User => ({
@@ -22,6 +26,8 @@ export default function Home() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [step, setStep] = useState<'behavioral' | 'exam' | null>(null);
+  const [questions, setQuestions] = useState([]);
 
   useEffect(() => {
     // Check for a real Supabase session on initial load
@@ -43,6 +49,21 @@ export default function Home() {
 
     return () => subscription.unsubscribe()
   }, [])
+
+  useEffect(() => {
+    if (user && !isAdmin) {
+      checkBehavioralCompleted(user.id).then(completed => {
+        if (completed) {
+          fetchNonBehavioralQuestions().then(q => {
+            setQuestions(q);
+            setStep('exam');
+          });
+        } else {
+          setStep('behavioral');
+        }
+      });
+    }
+  }, [user, isAdmin]);
 
   const handleAdminLogin = async (code: string): Promise<{ success: boolean; message: string }> => {
     const response = await fetch('/api/auth/admin-login', {
@@ -102,7 +123,13 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-      <ExamDashboard user={user} isAdmin={isAdmin} onLogout={handleLogout} />
+      {step === 'behavioral' ? (
+        <BehavioralPage onNext={() => setStep('exam')} userId={user.id} />
+      ) : step === 'exam' ? (
+        <ExamPage initialExamData={{}} userBio={{}} onComplete={() => console.log('Completed')} questions={questions} userId={user.id} />
+      ) : (
+        <ExamDashboard user={user} isAdmin={isAdmin} onLogout={handleLogout} />
+      )}
     </div>
   )
 }

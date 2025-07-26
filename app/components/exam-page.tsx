@@ -7,6 +7,9 @@ import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Clock, CheckCircle, AlertTriangle, User } from "lucide-react"
 import type { ExamData, UserBio, Question } from "../page"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 
 interface TimeSpent {
   multipleChoice: number
@@ -23,7 +26,8 @@ interface ExamPageProps {
 }
 
 export default function ExamPage({ initialExamData, userBio, onComplete, questions }: ExamPageProps) {
-  const [timeLeft, setTimeLeft] = useState(30 * 60) // 30 minutes in seconds
+  const [timeLeft, setTimeLeft] = useState(60 * 60);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [currentSection, setCurrentSection] = useState<"multipleChoice" | "concepts" | "calculations">("multipleChoice")
   const [examData, setExamData] = useState<ExamData>(initialExamData)
   const [timeSpent, setTimeSpent] = useState<TimeSpent>({
@@ -150,8 +154,12 @@ export default function ExamPage({ initialExamData, userBio, onComplete, questio
   const conceptQuestions = questions.filter((q) => q.type === "concepts")
   const calculationQuestions = questions.filter((q) => q.type === "calculations")
 
+  const nonBehavioralQuestions = questions; // Assume fetched non-behavioral
+  const currentQuestion = nonBehavioralQuestions[currentQuestionIndex];
+  const isAnswered = !!examData[currentQuestion.type]?.[currentQuestion.ID];
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <header className="bg-white border-b sticky top-0 z-40 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
@@ -243,7 +251,7 @@ export default function ExamPage({ initialExamData, userBio, onComplete, questio
           </div>
 
           <div className="lg:col-span-3">
-            <Card>
+            <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border-0 shadow-2xl">
               <CardContent className="p-8">
                 {questions.length === 0 && (
                   <div className="text-center py-12">
@@ -252,13 +260,19 @@ export default function ExamPage({ initialExamData, userBio, onComplete, questio
                   </div>
                 )}
 
-                {currentSection === "multipleChoice" && mcQuestions.length > 0 && <div>{/* MC Content */}</div>}
-
-                {currentSection === "concepts" && conceptQuestions.length > 0 && <div>{/* Concepts Content */}</div>}
-
-                {currentSection === "calculations" && calculationQuestions.length > 0 && (
-                  <div>{/* Calculations Content */}</div>
+                {currentQuestion && (
+                  <div>
+                    <h2 className="text-xl font-bold">{currentQuestion.question}</h2>
+                    <Label>Final Answer</Label>
+                    <Input value={examData[currentQuestion.type]?.[currentQuestion.ID] || ''} onChange={(e) => updateExamData(currentQuestion.type, currentQuestion.ID, e.target.value)} />
+                    <Label>Show your work (optional)</Label>
+                    <Textarea />
+                  </div>
                 )}
+                <div className="flex justify-between mt-4">
+                  <Button disabled={currentQuestionIndex === 0} onClick={() => setCurrentQuestionIndex(i => i - 1)}>Previous</Button>
+                  <Button disabled={currentQuestionIndex === nonBehavioralQuestions.length - 1} onClick={() => setCurrentQuestionIndex(i => i + 1)}>Next</Button>
+                </div>
               </CardContent>
             </Card>
 
